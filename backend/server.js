@@ -44,7 +44,8 @@ const allowedOrigins = [
   'http://localhost:5173',
   'https://mzuritech.netlify.app',
   'https://69c10cd5dbbf3e0824de7f42--mzuritech.netlify.app',
-  'https://69c113c60e84741f2529f706--mzuritech.netlify.app',  // ← add your current deploy URL
+  'https://69c113c60e84741f2529f706--mzuritech.netlify.app',
+  'https://69c120fb3c410539feb8f9f5--mzuritech.netlify.app', // ← add this
 ];
 const io = new Server(server, {
   cors: {
