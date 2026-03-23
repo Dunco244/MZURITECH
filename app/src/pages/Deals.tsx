@@ -8,7 +8,7 @@ import type { Product } from '@/types';
 import ProductImage from '@/components/ProductImage';
 import { pickFirstProductImage, resolveProductImageUrl } from '@/lib/utils';
 
-const API_URL = (import.meta as any)?.env?.VITE_API_URL || ' import.meta.env.VITE_API_URL || 'http://localhost:5000'';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const convertProduct = (p: any): Product | null => {
   if (!p) return null;
@@ -268,3 +268,4 @@ function QuickViewModal({
     </div>
   );
 }
+

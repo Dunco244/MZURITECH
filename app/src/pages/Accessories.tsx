@@ -8,7 +8,7 @@ import type { Product } from '@/types';
 
 import { products as staticProducts } from '@/data/products';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Helper to convert backend product to frontend Product type
 const convertProduct = (p: any): Product => {
@@ -336,4 +336,5 @@ function QuickViewModal({
     </div>
   );
 }
+
 

@@ -9,7 +9,7 @@ import { useStore } from '@/context/StoreContext';
 import { Button } from '@/components/ui/button';
 import { pickFirstProductImage, resolveProductImageUrl } from '@/lib/utils';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function imgSrc(image?: string): string {
   return resolveProductImageUrl(image ?? '');
@@ -499,3 +499,4 @@ export default function ProductDetail() {
     </>
   );
 }
+

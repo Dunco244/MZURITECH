@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import type { Order } from '@/types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface VendorStats {
@@ -1177,3 +1177,4 @@ Return ONLY a JSON array of objects with "key" and "value" fields. No markdown, 
     </>
   );
 }
+

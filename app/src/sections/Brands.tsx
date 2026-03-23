@@ -131,3 +131,4 @@ export default function Brands() {
     </section>
   );
 }
+

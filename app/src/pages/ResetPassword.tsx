@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft, Eye, EyeOff, CheckCircle, XCircle, ShieldCheck, Lock, KeyRound } from 'lucide-react';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export default function ResetPassword() {
   const { token } = useParams<{ token: string }>();

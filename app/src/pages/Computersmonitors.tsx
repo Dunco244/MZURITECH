@@ -8,7 +8,7 @@ import { useStore } from '@/context/StoreContext';
 import type { Product } from '@/types';
 import { products as staticProducts } from '@/data/products';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const SORT_OPTIONS = [
   { value: 'default',    label: 'Featured'          },
@@ -439,3 +439,4 @@ function QuickViewModal({
     </div>
   );
 }
+

@@ -206,3 +206,4 @@ export const testimonials: Testimonial[] = [
 ];
 
 export const brands = ['Dell', 'Apple', 'Samsung','Sony', 'ASUS', 'HP', 'Lenovo', 'MSI'];
+

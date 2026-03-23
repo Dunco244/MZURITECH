@@ -22,7 +22,7 @@ export function timeAgo(dateStr?: string): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-const API_URL = (import.meta as any)?.env?.VITE_API_URL || " import.meta.env.VITE_API_URL || 'http://localhost:5000'";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 export type ProductImageLike = string | { url?: string } | null | undefined;
 
@@ -45,3 +45,4 @@ export function resolveProductImageUrl(image?: string | null): string {
   if (image.startsWith("/")) return image;
   return `/${image}`;
 }
+

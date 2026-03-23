@@ -10,7 +10,7 @@ import { useStore } from '@/context/StoreContext';
 import type { Product } from '@/types';
 import ProductImage from '@/components/ProductImage';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -417,3 +417,4 @@ export default function FeaturedProducts() {
     </section>
   );
 }
+

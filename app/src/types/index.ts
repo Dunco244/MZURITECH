@@ -185,3 +185,4 @@ export interface Notification {
   readAt?: string;
   createdAt: string;
 }
+

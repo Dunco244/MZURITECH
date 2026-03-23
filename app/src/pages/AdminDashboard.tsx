@@ -6,7 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import LogisticsView from '@/pages/Logisticview';
 
-const API_URL = " import.meta.env.VITE_API_URL || 'http://localhost:5000'";
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 const VITE_URL = "http://localhost:5173";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

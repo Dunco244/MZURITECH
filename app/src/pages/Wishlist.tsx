@@ -218,3 +218,4 @@ function WishlistProductCard({ product }: { product: Product }) {
     </div>
   );
 }
+
