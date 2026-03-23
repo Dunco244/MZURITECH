@@ -1,47 +1,41 @@
 /**
  * Email Service — MzuriTech
- * Handles all transactional emails
+ * Handles all transactional emails via Brevo (formerly Sendinblue)
  */
 
-const nodemailer = require('nodemailer');
+const SibApiV3Sdk = require('@getbrevo/brevo');
 
 // ─────────────────────────────────────────────────────────────
-// Transporter — priority: Gmail > SMTP > Ethereal (dev only)
+// Brevo API Setup
 // ─────────────────────────────────────────────────────────────
-const createTransporter = () => {
-  if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    console.log('📧 Using Gmail transporter');
-    return nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
-    });
-  }
-  if (process.env.NODE_ENV === 'production' && process.env.SMTP_HOST) {
-    console.log('📧 Using SMTP transporter');
-    return nodemailer.createTransport({
-      host: process.env.SMTP_HOST, port: process.env.SMTP_PORT || 587, secure: false,
-      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-    });
-  }
-  console.warn('⚠️  No email credentials — using Ethereal (emails NOT delivered)');
-  return nodemailer.createTransport({
-    host: 'smtp.ethereal.email', port: 587, secure: false,
-    auth: { user: 'ethereal.user@ethereal.email', pass: 'ethereal.pass' },
-  });
-};
+const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
+apiInstance.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
 
-const transporter = createTransporter();
-transporter.verify(err => {
-  if (err) console.error('❌ Email transporter error:', err.message);
-  else     console.log('✅ Email transporter ready');
-});
+console.log('📧 Using Brevo transporter');
 
-const FROM       = process.env.GMAIL_USER
-  ? `"MzuriTech" <${process.env.GMAIL_USER}>`
-  : process.env.EMAIL_FROM || '"MzuriTech" <noreply@mzuritech.com>';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
-const SUPPORT    = process.env.GMAIL_USER || 'support@mzuritech.com';
+const SUPPORT    = process.env.FROM_EMAIL  || 'support@mzuritech.com';
+const FROM_NAME  = process.env.FROM_NAME   || 'MzuriTech';
+const FROM_EMAIL = process.env.FROM_EMAIL  || 'noreply@mzuritech.com';
 const YEAR       = new Date().getFullYear();
+
+// ─────────────────────────────────────────────────────────────
+// Core send function — replaces transporter.sendMail()
+// ─────────────────────────────────────────────────────────────
+const sendMail = async ({ to, subject, html }) => {
+  const email = new SibApiV3Sdk.SendSmtpEmail();
+  email.subject     = subject;
+  email.htmlContent = html;
+  email.sender      = { name: FROM_NAME, email: FROM_EMAIL };
+  email.to          = [{ email: to }];
+
+  try {
+    const result = await apiInstance.sendTransacEmail(email);
+    return result;
+  } catch (error) {
+    throw error;
+  }
+};
 
 // ─────────────────────────────────────────────────────────────
 // Shared header / footer
@@ -134,7 +128,7 @@ exports.sendPasswordReset = async (user, resetToken) => {
     </td></tr>`;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to: user.email, subject: '🔐 Reset Your MzuriTech Password', html: wrapEmail(body) });
+      await sendMail({ to: user.email, subject: '🔐 Reset Your MzuriTech Password', html: wrapEmail(body) });
       console.log(`✅ Password reset email → ${user.email}`);
     }
     return true;
@@ -213,7 +207,7 @@ exports.sendOrderConfirmation = async (order, recipient) => {
 
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to: email, subject: `✅ Order Confirmed — ${order.orderNumber} | MzuriTech`, html: wrapEmail(body) });
+      await sendMail({ to: email, subject: `✅ Order Confirmed — ${order.orderNumber} | MzuriTech`, html: wrapEmail(body) });
       console.log(`✅ Order confirmation email → ${email} (${isGuest ? 'guest' : 'user'})`);
     }
     return true;
@@ -314,7 +308,7 @@ exports.sendPaymentConfirmation = async (order, recipient, receiptNumber) => {
 
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to: email, subject: `🎉 Payment Received — Your order is on its way! | ${order.orderNumber}`, html: wrapEmail(body) });
+      await sendMail({ to: email, subject: `🎉 Payment Received — Your order is on its way! | ${order.orderNumber}`, html: wrapEmail(body) });
       console.log(`✅ Payment confirmation email → ${email} (${isGuest ? 'guest' : 'user'})`);
     }
     return true;
@@ -339,7 +333,7 @@ exports.sendWelcomeEmail = async (user) => {
     </td></tr>`;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to: user.email, subject: '🎉 Welcome to MzuriTech!', html: wrapEmail(body) });
+      await sendMail({ to: user.email, subject: '🎉 Welcome to MzuriTech!', html: wrapEmail(body) });
       console.log(`✅ Welcome email → ${user.email}`);
     }
     return true;
@@ -364,7 +358,7 @@ exports.sendNewsletterConfirmation = async (toEmail) => {
     </td></tr>`;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to: toEmail, subject: '🎉 Welcome to MzuriTech Newsletter!', html: wrapEmail(body) });
+      await sendMail({ to: toEmail, subject: '🎉 Welcome to MzuriTech Newsletter!', html: wrapEmail(body) });
       console.log(`✅ Newsletter confirmation → ${toEmail}`);
     }
     return true;
@@ -406,7 +400,7 @@ exports.sendDriverJobEmail = async ({ to, driverName, orderNumber, pickupAddress
     </td></tr>`;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to, subject: `📦 New Delivery Job — Order #${orderNumber} in Your Zone | MzuriTech`, html: wrapEmail(body) });
+      await sendMail({ to, subject: `📦 New Delivery Job — Order #${orderNumber} in Your Zone | MzuriTech`, html: wrapEmail(body) });
       console.log(`✅ Driver job email → ${to}`);
     }
     return true;
@@ -430,7 +424,7 @@ exports.sendJobTakenEmail = async ({ to, driverName, orderNumber }) => {
     </td></tr>`;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to, subject: `Job Taken — Order #${orderNumber} | MzuriTech`, html: wrapEmail(body) });
+      await sendMail({ to, subject: `Job Taken — Order #${orderNumber} | MzuriTech`, html: wrapEmail(body) });
       console.log(`✅ Job taken email → ${to}`);
     }
     return true;
@@ -487,7 +481,7 @@ exports.sendDispatchedEmail = async ({ to, customerName, orderNumber, driverName
     </td></tr>`;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to, subject: `🚚 Order #${orderNumber} Is On Its Way! — Delivery Code Inside | MzuriTech`, html: wrapEmail(body) });
+      await sendMail({ to, subject: `🚚 Order #${orderNumber} Is On Its Way! — Delivery Code Inside | MzuriTech`, html: wrapEmail(body) });
       console.log(`✅ Dispatched email → ${to}`);
     }
     return true;
@@ -531,7 +525,7 @@ exports.sendDeliveredEmail = async ({ to, customerName, orderNumber, totalPrice 
     </td></tr>`;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to, subject: `✅ Order #${orderNumber} Delivered! | MzuriTech`, html: wrapEmail(body) });
+      await sendMail({ to, subject: `✅ Order #${orderNumber} Delivered! | MzuriTech`, html: wrapEmail(body) });
       console.log(`✅ Delivered email → ${to}`);
     }
     return true;
@@ -556,8 +550,8 @@ exports.sendNewDriverAlertEmail = async ({ driverName, driverEmail, zone, vehicl
     </td></tr>`;
   try {
     if (process.env.NODE_ENV !== 'test') {
-      const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
-      await transporter.sendMail({ from: FROM, to: adminEmail, subject: `🚗 New Driver — ${driverName} (${zone}) | MzuriTech`, html: wrapEmail(body) });
+      const adminEmail = process.env.ADMIN_EMAIL || process.env.FROM_EMAIL;
+      await sendMail({ to: adminEmail, subject: `🚗 New Driver — ${driverName} (${zone}) | MzuriTech`, html: wrapEmail(body) });
       console.log(`✅ New driver alert → ${adminEmail}`);
     }
     return true;
@@ -565,13 +559,13 @@ exports.sendNewDriverAlertEmail = async ({ driverName, driverEmail, zone, vehicl
 };
 
 
-// ═════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════
 //  11. ADMIN: New Order Alert
-// ═════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════
 exports.sendAdminOrderAlert = async ({ order, customerName, customerEmail }) => {
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.FROM_EMAIL;
   if (!adminEmail) {
-    console.warn('⚠️  No ADMIN_EMAIL/GMAIL_USER set — admin order alert skipped');
+    console.warn('⚠️  No ADMIN_EMAIL set — admin order alert skipped');
     return false;
   }
 
@@ -635,7 +629,7 @@ exports.sendAdminOrderAlert = async ({ order, customerName, customerEmail }) => 
 
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to: adminEmail, subject: `🧾 New ${paymentSubjectLabel} Order — #${orderIdLabel} | MzuriTech`, html: wrapEmail(body) });
+      await sendMail({ to: adminEmail, subject: `🧾 New ${paymentSubjectLabel} Order — #${orderIdLabel} | MzuriTech`, html: wrapEmail(body) });
       console.log(`✅ Admin order alert → ${adminEmail}`);
     }
     return true;
@@ -643,13 +637,13 @@ exports.sendAdminOrderAlert = async ({ order, customerName, customerEmail }) => 
 };
 
 
-// ════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════
 //  12. ADMIN: Delivery Failed Alert
-// ════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════
 exports.sendAdminDeliveryFailedAlert = async ({ order, driver, reason }) => {
-  const adminEmail = process.env.ADMIN_EMAIL || process.env.GMAIL_USER;
+  const adminEmail = process.env.ADMIN_EMAIL || process.env.FROM_EMAIL;
   if (!adminEmail) {
-    console.warn('⚠️  No ADMIN_EMAIL/GMAIL_USER set — admin delivery-failed alert skipped');
+    console.warn('⚠️  No ADMIN_EMAIL set — admin delivery-failed alert skipped');
     return false;
   }
 
@@ -694,7 +688,7 @@ exports.sendAdminDeliveryFailedAlert = async ({ order, driver, reason }) => {
 
   try {
     if (process.env.NODE_ENV !== 'test') {
-      await transporter.sendMail({ from: FROM, to: adminEmail, subject: `⚠️ Delivery Failed — #${orderIdLabel} | MzuriTech`, html: wrapEmail(body) });
+      await sendMail({ to: adminEmail, subject: `⚠️ Delivery Failed — #${orderIdLabel} | MzuriTech`, html: wrapEmail(body) });
       console.log(`✅ Admin delivery-failed alert → ${adminEmail}`);
     }
     return true;
