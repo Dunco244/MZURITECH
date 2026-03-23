@@ -3,13 +3,14 @@
  * Handles all transactional emails via Brevo (formerly Sendinblue)
  */
 
-const SibApiV3Sdk = require('@getbrevo/brevo');
+const Brevo = require('@getbrevo/brevo');
 
 // ─────────────────────────────────────────────────────────────
 // Brevo API Setup
 // ─────────────────────────────────────────────────────────────
-const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
-apiInstance.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
+const brevoClient = new Brevo.BrevoClient({
+  apiKey: process.env.BREVO_API_KEY,
+});
 
 console.log('📧 Using Brevo transporter');
 if (!process.env.BREVO_API_KEY) {
@@ -26,14 +27,13 @@ const YEAR       = new Date().getFullYear();
 // Core send function — replaces transporter.sendMail()
 // ─────────────────────────────────────────────────────────────
 const sendMail = async ({ to, subject, html }) => {
-  const email = new SibApiV3Sdk.SendSmtpEmail();
-  email.subject     = subject;
-  email.htmlContent = html;
-  email.sender      = { name: FROM_NAME, email: FROM_EMAIL };
-  email.to          = [{ email: to }];
-
   try {
-    const result = await apiInstance.sendTransacEmail(email);
+    const result = await brevoClient.transactionalEmails.sendTransacEmail({
+      subject,
+      htmlContent: html,
+      sender: { name: FROM_NAME, email: FROM_EMAIL },
+      to: [{ email: to }],
+    });
     return result;
   } catch (error) {
     const brevoDetails = error?.response?.body || error?.response?.text || error?.message || error;
