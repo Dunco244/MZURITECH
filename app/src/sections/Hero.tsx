@@ -7,7 +7,7 @@ import { useStore } from '@/context/StoreContext';
 import type { Product } from '@/types';
 
 const DELL_PRODUCT_ID = '69aeeb9de93f6648267c049d';
-const API_URL = ' import.meta.env.VITE_API_URL || 'http://localhost:5000'';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
 
 const heroProductSpecs = {
   Processor: 'Intel Core Ultra 7',

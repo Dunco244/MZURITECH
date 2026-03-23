@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const API_URL = ' import.meta.env.VITE_API_URL || 'http://localhost:5000'';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
 
 export default function Newsletter() {
   const sectionRef = useRef<HTMLDivElement>(null);

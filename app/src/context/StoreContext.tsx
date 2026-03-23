@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import type { Product, CartItem } from '@/types';
 
-const API_URL = ' import.meta.env.VITE_API_URL || 'http://localhost:5000'';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
 
 interface StoreContextType {
   cart: CartItem[];

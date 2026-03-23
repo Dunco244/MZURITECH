@@ -9,7 +9,7 @@ import type { Product } from '@/types';
 import ProductImage from '@/components/ProductImage';
 import { products as staticProducts } from '@/data/products';
 
-const API_URL = ' import.meta.env.VITE_API_URL || 'http://localhost:5000'';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
 
 const isValidImageUrl = (url: string): boolean => {
   if (!url || typeof url !== 'string' || !url.trim()) return false;

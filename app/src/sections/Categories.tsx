@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const API_URL = ' import.meta.env.VITE_API_URL || 'http://localhost:5000'';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';;
 
 // ── Icon map: covers all likely category slugs/names ──────────────────────────
 const iconMap: Record<string, React.ElementType> = {
