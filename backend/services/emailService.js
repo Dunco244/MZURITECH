@@ -12,6 +12,9 @@ const apiInstance = new SibApiV3Sdk.TransactionalEmailsApi();
 apiInstance.authentications['api-key'].apiKey = process.env.BREVO_API_KEY;
 
 console.log('📧 Using Brevo transporter');
+if (!process.env.BREVO_API_KEY) {
+  console.warn('⚠️  BREVO_API_KEY is not set. Email sending will fail.');
+}
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 const SUPPORT    = process.env.FROM_EMAIL  || 'support@mzuritech.com';
@@ -33,6 +36,8 @@ const sendMail = async ({ to, subject, html }) => {
     const result = await apiInstance.sendTransacEmail(email);
     return result;
   } catch (error) {
+    const brevoDetails = error?.response?.body || error?.response?.text || error?.message || error;
+    console.error('❌ Brevo sendTransacEmail failed:', brevoDetails);
     throw error;
   }
 };
