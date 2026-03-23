@@ -42,6 +42,17 @@ const sendMail = async ({ to, subject, html }) => {
   }
 };
 
+// Simple test email for debugging deployments
+exports.sendTestEmail = async ({ to }) => {
+  const body = `
+    <tr><td style="padding:32px 40px;text-align:center;">
+      <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#111827;">Brevo Test Email</h2>
+      <p style="margin:0;color:#6b7280;font-size:14px;">If you can read this, Brevo is working.</p>
+    </td></tr>`;
+  await sendMail({ to, subject: '✅ Brevo Test Email | MzuriTech', html: wrapEmail(body) });
+  return true;
+};
+
 // ─────────────────────────────────────────────────────────────
 // Shared header / footer
 // ─────────────────────────────────────────────────────────────

@@ -33,6 +33,7 @@ const rewardsRoutes    = require('./routes/RewardsRoute'); // ✅ ADDED
 const connectDB    = require('./config/db');
 const swaggerSpecs = require('./config/swagger');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
+const { sendTestEmail } = require('./services/emailService');
 
 const app  = express();
 const PORT = process.env.PORT || 8080;
@@ -117,6 +118,22 @@ app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/drivers',    driverRoutes);
 app.use('/api/deliveries', deliveryRoutes);
 app.use('/api/rewards',    rewardsRoutes); // ✅ ADDED
+
+// ==================== DEBUG ====================
+
+app.post('/api/debug/email', async (req, res) => {
+  try {
+    const to = req.body?.to || process.env.ADMIN_EMAIL || process.env.FROM_EMAIL;
+    if (!to) {
+      return res.status(400).json({ success: false, message: 'No recipient email provided' });
+    }
+    await sendTestEmail({ to });
+    return res.json({ success: true, message: `Test email sent to ${to}` });
+  } catch (error) {
+    console.error('❌ Debug email failed:', error?.message || error);
+    return res.status(500).json({ success: false, message: 'Debug email failed', error: error?.message || 'unknown' });
+  }
+});
 
 // ==================== HEALTH CHECK ====================
 
