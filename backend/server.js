@@ -35,7 +35,7 @@ const swaggerSpecs = require('./config/swagger');
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
 const app  = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
 const server = http.createServer(app);
 
@@ -43,8 +43,9 @@ const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:5173',
   'http://localhost:5173',
   'http://192.168.100.11:5173',
+  'https://mzuritech.netlify.app',
+  'https://69c10cd5dbbf3e0824de7f42--mzuritech.netlify.app',
 ];
-
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
