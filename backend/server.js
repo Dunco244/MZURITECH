@@ -42,9 +42,9 @@ const server = http.createServer(app);
 const allowedOrigins = [
   process.env.CLIENT_URL || 'http://localhost:5173',
   'http://localhost:5173',
-  'http://192.168.100.11:5173',
   'https://mzuritech.netlify.app',
   'https://69c10cd5dbbf3e0824de7f42--mzuritech.netlify.app',
+  'https://69c113c60e84741f2529f706--mzuritech.netlify.app',  // ← add your current deploy URL
 ];
 const io = new Server(server, {
   cors: {
