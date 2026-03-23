@@ -493,7 +493,7 @@ exports.sendDispatchedEmail = async ({ to, customerName, orderNumber, driverName
       </div>
     </td></tr>
     <tr><td style="padding:24px 40px 32px;text-align:center;">
-      <a href="${CLIENT_URL}/track/${orderNumber}" style="display:inline-block;background:linear-gradient(135deg,#1a3faa,#2563eb);color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-size:15px;font-weight:600;">📦 Track My Order</a>
+      <a href="${CLIENT_URL}/track-order?order=${orderNumber}" style="display:inline-block;background:linear-gradient(135deg,#1a3faa,#2563eb);color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-size:15px;font-weight:600;">📦 Track My Order</a>
     </td></tr>`;
   try {
     if (process.env.NODE_ENV !== 'test') {
