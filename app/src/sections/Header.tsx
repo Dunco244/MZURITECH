@@ -15,7 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import UserMenuDropdown from '@/components/UserMenuDropdown';
 import { pickFirstProductImage, resolveProductImageUrl } from '@/lib/utils';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = ' import.meta.env.VITE_API_URL || 'http://localhost:5000'';
 
 const ICON_MAP: Record<string, React.ElementType> = {
   laptops: Laptop, laptop: Laptop,

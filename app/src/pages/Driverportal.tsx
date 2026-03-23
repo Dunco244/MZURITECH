@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
 // ─── API URLs ─────────────────────────────────────────────────────────────────
-const BASE         = "http://localhost:5000";
+const BASE         = " import.meta.env.VITE_API_URL || 'http://localhost:5000'";
 const DELIVERY_API = `${BASE}/api/deliveries`;
 const DRIVERS_API  = `${BASE}/api/drivers`;   // ← status toggle goes HERE not /deliveries
 

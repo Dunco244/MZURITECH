@@ -11,7 +11,7 @@ import {
   XCircle, Loader2, ArrowLeft, UserPlus, RefreshCw, Mail
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000';
+const API_URL = ' import.meta.env.VITE_API_URL || 'http://localhost:5000'';
 
 // ── Status config ──────────────────────────────────────────────────────────────
 const STATUS_STEPS = ['pending', 'processing', 'shipped', 'delivered'] as const;

@@ -27,7 +27,7 @@ Write-Host "        (waiting for URL, takes ~15 seconds...)" -ForegroundColor Gr
 $cfUrl = $null
 $job = Start-Job -ScriptBlock {
     param($exe)
-    & $exe tunnel --url http://localhost:5000 2>&1
+    & $exe tunnel --url  import.meta.env.VITE_API_URL || 'http://localhost:5000' 2>&1
 } -ArgumentList $CloudflaredExe
 
 # Wait for the trycloudflare URL to appear in output (max 30 seconds)
@@ -70,8 +70,8 @@ Write-Host ""
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host "  Tunnel:   $cfUrl" -ForegroundColor White
 Write-Host "  Callback: $callbackUrl" -ForegroundColor White
-Write-Host "  Backend:  http://localhost:5000" -ForegroundColor White
-Write-Host "  Frontend: http://localhost:5173" -ForegroundColor White
+Write-Host "  Backend:   import.meta.env.VITE_API_URL || 'http://localhost:5000'" -ForegroundColor White
+Write-Host "  Frontend: https://mzuritech.netlify.app -ForegroundColor White
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Keep this window OPEN while developing!" -ForegroundColor Yellow

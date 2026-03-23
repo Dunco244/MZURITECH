@@ -45,7 +45,7 @@ interface Product {
   stockQuantity?: number;
 }
 
-const API_URL = (import.meta as any)?.env?.VITE_API_URL || "http://localhost:5000";
+const API_URL = (import.meta as any)?.env?.VITE_API_URL || " import.meta.env.VITE_API_URL || 'http://localhost:5000'";
 
 interface ProductForCart {
   id: string;
