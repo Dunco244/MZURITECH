@@ -98,7 +98,7 @@ export default function Footer() {
                   <Phone className="w-4 h-4 text-primary-light flex-shrink-0" />
                   <span>+254 718 010 222</span>
                 </a>
-                <a href="mailto:support@mzuritech.com" className="flex items-center gap-3 text-sm text-white/50 hover:text-white transition-colors">
+                <a href="mailto:kibetdan202@gmail.com" className="flex items-center gap-3 text-sm text-white/50 hover:text-white transition-colors">
                   <Mail className="w-4 h-4 text-primary-light flex-shrink-0" />
                   <span>support@mzuritech.com</span>
                 </a>
