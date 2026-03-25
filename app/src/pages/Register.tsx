@@ -6,7 +6,7 @@ import { Loader2, Eye, EyeOff, Store, User, Mail, Phone, Lock, CheckCircle2, XCi
 export default function Register() {
   const [name, setName]                       = useState('');
   const [email, setEmail]                     = useState('');
-  const [phone, setPhone]                     = useState('+254');
+  const [phone, setPhone]                     = useState('');
   const [password, setPassword]               = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword]       = useState(false);
@@ -34,9 +34,11 @@ export default function Register() {
     return null;
   };
 
+  const normalizePhone = (value: string) => value.replace(/\s+/g, '').replace(/-/g, '');
   const phoneError = () => {
-    if (!phone || phone === '+254') return 'Phone number is required';
-    if (!/^\+254\d{9}$/.test(phone)) return 'Must start with +254 followed by exactly 9 digits';
+    const v = normalizePhone(phone);
+    if (!v) return 'Phone number is required';
+    if (!/^(?:\+254|0)7\d{8}$/.test(v)) return 'Use 07XXXXXXXX or +2547XXXXXXXX';
     return null;
   };
 
@@ -236,7 +238,7 @@ export default function Register() {
                 </label>
                 <div style={{ position:'relative' }}>
                   <span className="field-icon"><Phone size={16} color="#94a3b8" /></span>
-                  <input className="reg-input" type="tel" placeholder="+254 700 000 000"
+                  <input className="reg-input" type="tel" placeholder="07xx xxx xxx"
                     value={phone} onChange={e => setPhone(e.target.value)} onBlur={() => touch('phone')}
                     style={{ borderColor: touched.phone && phoneError() ? '#ef4444' : '#e2e8f0' }}
                     autoComplete="tel" />
@@ -246,7 +248,7 @@ export default function Register() {
                     <XCircle size={12} /> {phoneError()}
                   </p>
                 )}
-                <p style={{ color:'#94a3b8', fontSize:11, marginTop:4 }}>Format: +254 followed by 9 digits</p>
+                <p style={{ color:'#94a3b8', fontSize:11, marginTop:4 }}>Format: 07XXXXXXXX or +2547XXXXXXXX</p>
               </div>
 
               {/* Password */}

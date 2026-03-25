@@ -309,7 +309,7 @@ function buildReceiptHTML(order: Order): string {
 
     <div class="footer">
       <p><strong>MzuriTech Electronics</strong> · Nairobi, Kenya</p>
-      <p>support@mzuritech.co.ke · +254 700 000 000</p>
+      <p>kibetdan202@gmail.com · +254 700 000 000</p>
       <p style="margin-top:8px;font-size:11px">This is a computer-generated receipt — no signature required.<br/>Thank you for shopping with MzuriTech!</p>
     </div>
   </div>
@@ -617,4 +617,5 @@ export default function OrderHistory() {
     </>
   );
 }
+
 

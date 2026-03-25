@@ -16,7 +16,6 @@ const footerLinks = {
   support: [
     { name: 'Contact Us',         href: '/contact' },
     { name: 'FAQs',               href: '/faqs' },
-    { name: 'Shipping & Returns', href: '/shipping-returns' },
     { name: 'Track Order',        href: 'SMART' },
   ],
   company: [
@@ -100,7 +99,7 @@ export default function Footer() {
                 </a>
                 <a href="mailto:kibetdan202@gmail.com" className="flex items-center gap-3 text-sm text-white/50 hover:text-white transition-colors">
                   <Mail className="w-4 h-4 text-primary-light flex-shrink-0" />
-                  <span>support@mzuritech.com</span>
+                  <span>kibetdan202@gmail.com</span>
                 </a>
               </div>
             </div>
@@ -192,4 +191,3 @@ export default function Footer() {
     </footer>
   );
 }
-

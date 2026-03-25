@@ -217,7 +217,7 @@ function buildReceiptHTML(order: Order): string {
         Delivery: <span style="color:${order.isDelivered?'#16a34a':'#d97706'};font-weight:600">${order.isDelivered?'✓ Delivered':'Pending'}</span></div></div>
       </div>
     </div>
-    <div class="ft"><strong>MzuriTech Electronics</strong> · support@mzuritech.co.ke · +254 700 000 000<br/>Computer-generated receipt — no signature required. Thank you for shopping with us!</div>
+    <div class="ft"><strong>MzuriTech Electronics</strong> · kibetdan202@gmail.com · +254 700 000 000<br/>Computer-generated receipt — no signature required. Thank you for shopping with us!</div>
   </div></body></html>`;
 }
 
@@ -306,7 +306,7 @@ export default function Profile() {
 
   const [formData, setFormData] = useState({
     name:    user?.name              || '',
-    phone:   user?.phone             || '+254',
+    phone:   user?.phone             || '',
     street:  user?.address?.street   || '',
     apartment: user?.address?.apartment || '',
     city:    user?.address?.city     || '',
@@ -364,7 +364,7 @@ export default function Profile() {
     if (!user) return;
     setFormData({
       name:    user.name              || '',
-      phone:   user.phone             || '+254',
+      phone:   user.phone             || '',
       street:  user.address?.street   || '',
       apartment: user.address?.apartment || '',
       city:    user.address?.city     || '',
@@ -381,10 +381,12 @@ export default function Profile() {
     if (e.target.name === 'phone') setPhoneError('');
   };
 
+  const normalizePhone = (value: string) => value.replace(/\s+/g, '').replace(/-/g, '');
   const validatePhone = (phone: string) => {
-    if (!phone || phone === '+254') return null;
-    return /^\+254\d{9}$/.test(phone)
-      ? null : 'Phone must be +254 followed by 9 digits';
+    const v = normalizePhone(phone);
+    if (!v) return null;
+    return /^(?:\+254|0)7\d{8}$/.test(v)
+      ? null : 'Use 07XXXXXXXX or +2547XXXXXXXX';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -602,7 +604,7 @@ export default function Profile() {
                     </div>
                     <div>
                       <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#475569', marginBottom:6 }}>Phone Number</label>
-                      <input className="field-input" name="phone" value={formData.phone} onChange={handleChange} placeholder="+254 700 000 000" />
+                      <input className="field-input" name="phone" value={formData.phone} onChange={handleChange} placeholder="07xx xxx xxx" />
                       {phoneError && <p style={{ fontSize:11, color:'#ef4444', marginTop:4 }}>{phoneError}</p>}
                     </div>
                     <div>
@@ -1069,4 +1071,5 @@ export default function Profile() {
     </>
   );
 }
+
 

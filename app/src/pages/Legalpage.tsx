@@ -29,11 +29,11 @@ We do not sell, rent, or share your personal information with third parties for 
       },
       {
         heading: '5. Your Rights',
-        content: `You have the right to access, correct, or delete your personal data at any time. You can update your information from your account profile page. To request deletion of your account or data, contact us at support@mzuritech.com. We will process your request within 30 days.`,
+        content: `You have the right to access, correct, or delete your personal data at any time. You can update your information from your account profile page. To request deletion of your account or data, contact us at kibetdan202@gmail.com. We will process your request within 30 days.`,
       },
       {
         heading: '6. Contact Us',
-        content: `For any privacy-related questions, contact our Data Protection Officer at support@mzuritech.com or write to us at 123 Tech Street, Nairobi, Kenya.`,
+        content: `For any privacy-related questions, contact our Data Protection Officer at kibetdan202@gmail.com or write to us at 123 Tech Street, Nairobi, Kenya.`,
       },
     ],
   },
@@ -167,10 +167,11 @@ export default function LegalPage() {
 
         <div className="text-center py-6 text-sm text-gray-400">
           Questions? Contact us at{' '}
-          <a href="mailto:support@mzuritech.com" className="text-primary underline">support@mzuritech.com</a>
+          <a href="mailto:kibetdan202@gmail.com" className="text-primary underline">kibetdan202@gmail.com</a>
         </div>
       </div>
     </div>
   );
 }
+
 

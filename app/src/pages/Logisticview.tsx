@@ -575,6 +575,7 @@ function DispatchModal({ order, token, onClose, onDispatched }: {
 interface LogisticViewProps { token: string; }
 
 export default function LogisticView({ token }: LogisticViewProps) {
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 900 : false));
   const [mainTab, setMainTab] = useState<"shipments" | "drivers">("shipments");
 
   // Orders state
@@ -630,6 +631,20 @@ export default function LogisticView({ token }: LogisticViewProps) {
   }, []);
 
   useEffect(() => { fetchOrders(1, statusFilter); }, [statusFilter]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 900px)");
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      const matches = "matches" in e ? e.matches : (e as MediaQueryList).matches;
+      setIsMobile(matches);
+    };
+    onChange(mq);
+    mq.addEventListener ? mq.addEventListener("change", onChange) : mq.addListener(onChange as any);
+    return () => {
+      mq.removeEventListener ? mq.removeEventListener("change", onChange) : mq.removeListener(onChange as any);
+    };
+  }, []);
 
   const handleDeleteDriver = async (id: string) => {
     if (!confirm("Remove this driver?")) return;
@@ -746,31 +761,27 @@ export default function LogisticView({ token }: LogisticViewProps) {
 
             <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
               {ordersLoading ? <Spinner /> : filteredOrders.length === 0 ? <EmptyState icon="📦" text="No orders found" /> : (
-                <table>
-                  <thead>
-                    <tr><th>Order</th><th>Customer</th><th>Destination</th><th>Status</th><th>Value</th><th>Action</th></tr>
-                  </thead>
-                  <tbody>
+                isMobile ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
                     {filteredOrders.map(o => (
-                      <tr key={o._id} className="lg-row">
-                        <td>
-                          <div style={{ fontFamily: "'DM Mono',monospace", color: "#2563eb", fontSize: 12, fontWeight: 700 }}>#{o.orderNumber ?? o._id.slice(-8)}</div>
-                          <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{timeAgo(o.createdAt)}</div>
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{getUserName(o.user)}</div>
-                          {o.shippingAddress?.phone && <div style={{ fontSize: 11, color: "#94a3b8" }}>📞 {o.shippingAddress.phone}</div>}
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>📍 {o.shippingAddress?.city ?? "—"}</div>
-                          {o.shippingAddress?.address && <div style={{ fontSize: 11, color: "#64748b", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.shippingAddress.address}</div>}
-                        </td>
-                        <td><StatusBadge status={o.status} /></td>
-                        <td style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700 }}>{formatKES(o.totalPrice)}</td>
-                        <td>
+                      <div key={o._id} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                          <div>
+                            <div style={{ fontFamily: "'DM Mono',monospace", color: "#2563eb", fontSize: 12, fontWeight: 700 }}>#{o.orderNumber ?? o._id.slice(-8)}</div>
+                            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{timeAgo(o.createdAt)}</div>
+                          </div>
+                          <StatusBadge status={o.status} />
+                        </div>
+                        <div style={{ marginTop: 8, fontSize: 13, color: "#1e293b" }}>
+                          <div><strong>Customer:</strong> {getUserName(o.user)}</div>
+                          <div><strong>Destination:</strong> {o.shippingAddress?.city ?? "—"}</div>
+                          {o.shippingAddress?.phone && <div>📞 {o.shippingAddress.phone}</div>}
+                        </div>
+                        <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700 }}>{formatKES(o.totalPrice)}</div>
                           {o.status === "processing" && (
                             <button onClick={() => setDispatchOrder(o)}
-                              style={{ border: "none", background: "linear-gradient(135deg,#2563eb,#4f46e5)", color: "white", borderRadius: 9, padding: "7px 14px", fontSize: 12, fontWeight: 700, fontFamily: "'Sora',sans-serif", cursor: "pointer", boxShadow: "0 2px 8px rgba(37,99,235,.25)", display: "flex", alignItems: "center", gap: 6 }}>
+                              style={{ border: "none", background: "linear-gradient(135deg,#2563eb,#4f46e5)", color: "white", borderRadius: 9, padding: "7px 12px", fontSize: 12, fontWeight: 700, fontFamily: "'Sora',sans-serif", cursor: "pointer" }}>
                               🚀 Dispatch
                             </button>
                           )}
@@ -786,11 +797,57 @@ export default function LogisticView({ token }: LogisticViewProps) {
                           {o.status === "failed" && (
                             <span style={{ fontSize: 12, color: "#dc2626", background: "#fee2e2", padding: "5px 10px", borderRadius: 8, fontWeight: 600 }}>Failed</span>
                           )}
-                        </td>
-                      </tr>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                ) : (
+                  <table>
+                    <thead>
+                      <tr><th>Order</th><th>Customer</th><th>Destination</th><th>Status</th><th>Value</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                      {filteredOrders.map(o => (
+                        <tr key={o._id} className="lg-row">
+                          <td>
+                            <div style={{ fontFamily: "'DM Mono',monospace", color: "#2563eb", fontSize: 12, fontWeight: 700 }}>#{o.orderNumber ?? o._id.slice(-8)}</div>
+                            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{timeAgo(o.createdAt)}</div>
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: 600, fontSize: 13, color: "#1e293b" }}>{getUserName(o.user)}</div>
+                            {o.shippingAddress?.phone && <div style={{ fontSize: 11, color: "#94a3b8" }}>📞 {o.shippingAddress.phone}</div>}
+                          </td>
+                          <td>
+                            <div style={{ fontWeight: 600, fontSize: 13 }}>📍 {o.shippingAddress?.city ?? "—"}</div>
+                            {o.shippingAddress?.address && <div style={{ fontSize: 11, color: "#64748b", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.shippingAddress.address}</div>}
+                          </td>
+                          <td><StatusBadge status={o.status} /></td>
+                          <td style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700 }}>{formatKES(o.totalPrice)}</td>
+                          <td>
+                            {o.status === "processing" && (
+                              <button onClick={() => setDispatchOrder(o)}
+                                style={{ border: "none", background: "linear-gradient(135deg,#2563eb,#4f46e5)", color: "white", borderRadius: 9, padding: "7px 14px", fontSize: 12, fontWeight: 700, fontFamily: "'Sora',sans-serif", cursor: "pointer", boxShadow: "0 2px 8px rgba(37,99,235,.25)", display: "flex", alignItems: "center", gap: 6 }}>
+                                🚀 Dispatch
+                              </button>
+                            )}
+                            {o.status === "shipped" && (
+                              <span style={{ fontSize: 12, color: "#7c3aed", background: "#f5f3ff", padding: "5px 10px", borderRadius: 8, fontWeight: 600 }}>🚚 In Transit</span>
+                            )}
+                            {o.status === "delivered" && (
+                              <span style={{ fontSize: 12, color: "#059669", background: "#f0fdf4", padding: "5px 10px", borderRadius: 8, fontWeight: 600 }}>✅ Delivered</span>
+                            )}
+                            {o.status === "cancelled" && (
+                              <span style={{ fontSize: 12, color: "#94a3b8", background: "#f8fafc", padding: "5px 10px", borderRadius: 8 }}>Cancelled</span>
+                            )}
+                            {o.status === "failed" && (
+                              <span style={{ fontSize: 12, color: "#dc2626", background: "#fee2e2", padding: "5px 10px", borderRadius: 8, fontWeight: 600 }}>Failed</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
               )}
               <Paginator pg={ordersPg} onPage={p => fetchOrders(p, statusFilter)} />
             </div>
@@ -815,58 +872,96 @@ export default function LogisticView({ token }: LogisticViewProps) {
 
             <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
               {driversLoading ? <Spinner /> : drivers.length === 0 ? <EmptyState icon="🧑‍✈️" text="No drivers yet — add your first driver" /> : (
-                <table>
-                  <thead>
-                    <tr><th>Driver</th><th>Zone</th><th>Vehicle</th><th>Status</th><th>Deliveries</th><th>Actions</th></tr>
-                  </thead>
-                  <tbody>
+                isMobile ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
                     {drivers.map(d => (
-                      <tr key={d._id} className="lg-row">
-                        <td>
-                          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,#2563eb,#4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
-                              {d.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{d.name}</div>
-                              <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'DM Mono',monospace" }}>{d.email}</div>
-                              <div style={{ fontSize: 11, color: "#64748b" }}>📞 {d.phone}</div>
-                            </div>
+                      <div key={d._id} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,#2563eb,#4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                            {d.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
                           </div>
-                        </td>
-                        <td>
-                          <span style={{ background: "#eff6ff", color: "#2563eb", borderRadius: 8, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>📍 {d.zone}</span>
-                        </td>
-                        <td>
-                          <span style={{ fontSize: 16 }}>{VEHICLE_ICONS[d.vehicleType] ?? "🚗"}</span>
-                          <span style={{ fontSize: 12, color: "#64748b", marginLeft: 6, textTransform: "capitalize" }}>{d.vehicleType}</span>
-                          {d.licensePlate && <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'DM Mono',monospace" }}>{d.licensePlate}</div>}
-                        </td>
-                        <td>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{d.name}</div>
+                            <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'DM Mono',monospace" }}>{d.email}</div>
+                            <div style={{ fontSize: 11, color: "#64748b" }}>📞 {d.phone}</div>
+                          </div>
                           <StatusBadge status={d.isActive ? d.status : "inactive"} />
-                          {!d.isActive && <div style={{ fontSize: 10, color: "#dc2626", marginTop: 3 }}>Account deactivated</div>}
-                        </td>
-                        <td>
-                          <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#0f172a" }}>{d.successfulDeliveries}</div>
-                          <div style={{ fontSize: 11, color: "#94a3b8" }}>of {d.totalDeliveries} total</div>
+                        </div>
+                        <div style={{ marginTop: 8, fontSize: 12, color: "#475569" }}>
+                          📍 {d.zone} • {VEHICLE_ICONS[d.vehicleType] ?? "🚗"} {d.vehicleType}
+                          {d.licensePlate && <span style={{ marginLeft: 6, color: "#94a3b8" }}>({d.licensePlate})</span>}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+                          <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#0f172a" }}>{d.successfulDeliveries} / {d.totalDeliveries}</div>
                           <div style={{ fontSize: 11, color: "#d97706" }}>⭐ {d.rating?.toFixed(1) ?? "5.0"}</div>
-                        </td>
-                        <td>
-                          <div style={{ display: "flex", gap: 6 }}>
-                            <button onClick={() => handleToggleDriverStatus(d)}
-                              style={{ border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 600, fontFamily: "'Sora',sans-serif", cursor: "pointer" }}>
-                              {d.isActive ? "Deactivate" : "Activate"}
-                            </button>
-                            <button onClick={() => handleDeleteDriver(d._id)}
-                              style={{ border: "1px solid #fecaca", background: "#fee2e2", color: "#dc2626", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 600, fontFamily: "'Sora',sans-serif", cursor: "pointer" }}>
-                              🗑
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                        </div>
+                        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                          <button onClick={() => handleToggleDriverStatus(d)}
+                            style={{ flex: 1, border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", borderRadius: 8, padding: "6px 10px", fontSize: 11, fontWeight: 600, fontFamily: "'Sora',sans-serif", cursor: "pointer" }}>
+                            {d.isActive ? "Deactivate" : "Activate"}
+                          </button>
+                          <button onClick={() => handleDeleteDriver(d._id)}
+                            style={{ flex: 1, border: "1px solid #fecaca", background: "#fee2e2", color: "#dc2626", borderRadius: 8, padding: "6px 10px", fontSize: 11, fontWeight: 600, fontFamily: "'Sora',sans-serif", cursor: "pointer" }}>
+                            🗑 Remove
+                          </button>
+                        </div>
+                      </div>
                     ))}
-                  </tbody>
-                </table>
+                  </div>
+                ) : (
+                  <table>
+                    <thead>
+                      <tr><th>Driver</th><th>Zone</th><th>Vehicle</th><th>Status</th><th>Deliveries</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                      {drivers.map(d => (
+                        <tr key={d._id} className="lg-row">
+                          <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "linear-gradient(135deg,#2563eb,#4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 12, flexShrink: 0 }}>
+                                {d.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 600, color: "#1e293b", fontSize: 13 }}>{d.name}</div>
+                                <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'DM Mono',monospace" }}>{d.email}</div>
+                                <div style={{ fontSize: 11, color: "#64748b" }}>📞 {d.phone}</div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <span style={{ background: "#eff6ff", color: "#2563eb", borderRadius: 8, padding: "3px 10px", fontSize: 12, fontWeight: 600 }}>📍 {d.zone}</span>
+                          </td>
+                          <td>
+                            <span style={{ fontSize: 16 }}>{VEHICLE_ICONS[d.vehicleType] ?? "🚗"}</span>
+                            <span style={{ fontSize: 12, color: "#64748b", marginLeft: 6, textTransform: "capitalize" }}>{d.vehicleType}</span>
+                            {d.licensePlate && <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'DM Mono',monospace" }}>{d.licensePlate}</div>}
+                          </td>
+                          <td>
+                            <StatusBadge status={d.isActive ? d.status : "inactive"} />
+                            {!d.isActive && <div style={{ fontSize: 10, color: "#dc2626", marginTop: 3 }}>Account deactivated</div>}
+                          </td>
+                          <td>
+                            <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#0f172a" }}>{d.successfulDeliveries}</div>
+                            <div style={{ fontSize: 11, color: "#94a3b8" }}>of {d.totalDeliveries} total</div>
+                            <div style={{ fontSize: 11, color: "#d97706" }}>⭐ {d.rating?.toFixed(1) ?? "5.0"}</div>
+                          </td>
+                          <td>
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <button onClick={() => handleToggleDriverStatus(d)}
+                                style={{ border: "1px solid #e2e8f0", background: "#f8fafc", color: "#64748b", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 600, fontFamily: "'Sora',sans-serif", cursor: "pointer" }}>
+                                {d.isActive ? "Deactivate" : "Activate"}
+                              </button>
+                              <button onClick={() => handleDeleteDriver(d._id)}
+                                style={{ border: "1px solid #fecaca", background: "#fee2e2", color: "#dc2626", borderRadius: 8, padding: "5px 10px", fontSize: 11, fontWeight: 600, fontFamily: "'Sora',sans-serif", cursor: "pointer" }}>
+                                🗑
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
               )}
               <Paginator pg={driversPg} onPage={fetchDrivers} />
             </div>

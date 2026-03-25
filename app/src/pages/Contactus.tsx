@@ -53,7 +53,7 @@ export default function ContactUs() {
             {[
               { icon: MapPin, label: 'Visit Us',    value: '123 Tech Street, Nairobi, Kenya' },
               { icon: Phone,  label: 'Call Us',     value: '+254 718 010 222' },
-              { icon: Mail,   label: 'Email Us',    value: 'support@mzuritech.com' },
+              { icon: Mail,   label: 'Email Us',    value: 'kibetdan202@gmail.com' },
               { icon: Clock,  label: 'Working Hours', value: 'Mon–Sat, 8am – 6pm EAT' },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-start gap-4">
@@ -71,13 +71,23 @@ export default function ContactUs() {
             <div className="pt-4 border-t border-gray-200">
               <p className="text-sm font-semibold text-gray-500 mb-3">Follow us</p>
               <div className="flex gap-3">
-                {['Facebook', 'Twitter', 'Instagram', 'YouTube'].map(s => (
-                  <a key={s} href="#"
-                    className="w-9 h-9 rounded-full bg-gray-100 hover:bg-primary hover:text-white flex items-center justify-center text-xs font-bold text-gray-500 transition-colors">
-                    {s[0]}
+                {[
+                  { label: 'Facebook',  href: 'https://facebook.com',  icon: 'facebook' },
+                  { label: 'Twitter',   href: 'https://twitter.com',   icon: 'twitter' },
+                  { label: 'Instagram', href: 'https://instagram.com', icon: 'instagram' },
+                  { label: 'YouTube',   href: 'https://youtube.com',   icon: 'youtube' },
+                ].map(s => (
+                  <a key={s.label} href={s.href} target="_blank" rel="noopener noreferrer"
+                    aria-label={s.label}
+                    className="w-9 h-9 rounded-full bg-gray-100 hover:bg-primary hover:text-white flex items-center justify-center text-gray-500 transition-colors">
+                    <i className={`fa-brands fa-${s.icon}`} />
                   </a>
                 ))}
               </div>
+              <link
+                rel="stylesheet"
+                href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+              />
             </div>
           </div>
 

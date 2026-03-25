@@ -10,7 +10,7 @@ const faqs = [
       { q: 'Can I place an order without creating an account?', a: 'Yes! You can checkout as a guest. Just enter your email address and delivery details — no account needed. You\'ll receive an order confirmation email and can track your order using your order number.' },
       { q: 'How do I pay via M-Pesa?', a: 'Select M-Pesa at checkout and enter your M-Pesa registered phone number. You\'ll receive an STK Push prompt on your phone — enter your PIN to complete payment. The prompt expires in 5 minutes.' },
       { q: 'Is my payment information secure?', a: 'Yes. We use industry-standard encryption. We never store your M-Pesa PIN. All transactions are processed through Safaricom\'s secure M-Pesa gateway.' },
-      { q: 'Can I cancel my order?', a: 'You can cancel a pending order from your Orders page before it moves to "Processing" status. Once processing has begun, please contact us immediately at support@mzuritech.com.' },
+      { q: 'Can I cancel my order?', a: 'You can cancel a pending order from your Orders page before it moves to "Processing" status. Once processing has begun, please contact us immediately at kibetdan202@gmail.com.' },
     ],
   },
   {
@@ -25,7 +25,7 @@ const faqs = [
   {
     category: 'Returns & Warranty',
     items: [
-      { q: 'What is your return policy?', a: 'We offer a 30-day return policy on all products. Items must be unused, in original packaging, with all accessories included. Contact us at support@mzuritech.com to initiate a return.' },
+      { q: 'What is your return policy?', a: 'We offer a 30-day return policy on all products. Items must be unused, in original packaging, with all accessories included. Contact us at kibetdan202@gmail.com to initiate a return.' },
       { q: 'What warranty do products come with?', a: 'All products come with the manufacturer\'s warranty. Laptops and phones typically have a 1–2 year warranty. We also offer extended warranty options at checkout.' },
       { q: 'What if I receive a damaged or wrong item?', a: 'Contact us within 48 hours of delivery with photos of the item. We\'ll arrange a replacement or full refund at no cost to you.' },
       { q: 'How long do refunds take?', a: 'M-Pesa refunds are processed within 3-5 business days.' },
@@ -113,7 +113,7 @@ export default function FAQs() {
           <h3 className="font-bold text-gray-900 mb-2">Still have questions?</h3>
           <p className="text-gray-500 text-sm mb-4">Our support team is available Mon–Sat, 8am–6pm EAT</p>
           <div className="flex gap-3 justify-center flex-wrap">
-            <a href="mailto:support@mzuritech.com" className="px-5 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors">
+            <a href="mailto:kibetdan202@gmail.com" className="px-5 py-2 bg-primary text-white text-sm font-medium rounded-lg hover:bg-primary/90 transition-colors">
               Email Support
             </a>
             <a href="tel:+254718010222" className="px-5 py-2 bg-white border border-gray-200 text-gray-700 text-sm font-medium rounded-lg hover:border-primary hover:text-primary transition-colors">
@@ -125,4 +125,5 @@ export default function FAQs() {
     </div>
   );
 }
+
 

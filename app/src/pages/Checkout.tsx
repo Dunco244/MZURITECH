@@ -137,16 +137,19 @@ export default function Checkout() {
     setError('');
   };
 
+  const normalizePhone = (value: string) => value.replace(/\s+/g, '').replace(/-/g, '');
   const validatePhone = (phone: string): string | null => {
-    if (!phone) return 'Phone number is required';
-    if (!/^\+254\d{9}$/.test(phone))
-      return 'Phone must start with +254 followed by 9 digits (e.g., +254 700 000 000)';
+    const v = normalizePhone(phone);
+    if (!v) return 'Phone number is required';
+    if (!/^(?:\+254|0)7\d{8}$/.test(v))
+      return 'Phone must be 07XXXXXXXX or +2547XXXXXXXX';
     return null;
   };
   const validateAuthPhone = (phone: string): string | null => {
-    if (!phone) return 'Phone number is required';
-    if (!/^\+254\d{9}$/.test(phone))
-      return 'Phone must start with +254 followed by 9 digits (e.g., +254 700 000 000)';
+    const v = normalizePhone(phone);
+    if (!v) return 'Phone number is required';
+    if (!/^(?:\+254|0)7\d{8}$/.test(v))
+      return 'Phone must be 07XXXXXXXX or +2547XXXXXXXX';
     return null;
   };
 
@@ -271,7 +274,7 @@ export default function Checkout() {
             },
             body: JSON.stringify({
               orderId:     orderData.order._id,
-              phoneNumber: mpesaPhone.replace(/^0|^254/, '254'),
+              phoneNumber: mpesaPhone.replace(/^\+?0|^\+?254/, '254'),
             }),
           });
           const mpesaData = await mpesaRes.json();
@@ -463,7 +466,7 @@ export default function Checkout() {
                             </div>
                             <div>
                               <Label htmlFor="authPhone" className="text-xs">Phone *</Label>
-                              <Input id="authPhone" placeholder="+254 700 000 000" value={authPhone}
+                              <Input id="authPhone" placeholder="07xx xxx xxx" value={authPhone}
                                 onChange={e => setAuthPhone(e.target.value)} className="h-9 text-sm" />
                             </div>
                           </>
@@ -579,9 +582,9 @@ export default function Checkout() {
                     <Label htmlFor="phone" className="flex items-center gap-2">
                       <Phone className="w-4 h-4" /> Phone Number *
                     </Label>
-                    <Input id="phone" placeholder="+254 700 000 000" value={shippingAddress.phone}
+                    <Input id="phone" placeholder="07xx xxx xxx" value={shippingAddress.phone}
                       onChange={e => handleAddressChange('phone', e.target.value)} />
-                    <p className="text-xs text-gray-500 mt-1">Kenyan format: +254 7XX XXX XXX</p>
+                    <p className="text-xs text-gray-500 mt-1">Kenyan format: 07XXXXXXXX or +2547XXXXXXXX</p>
                   </div>
 
                   <div className="md:col-span-2">
@@ -684,7 +687,7 @@ export default function Checkout() {
                     {paymentMethod === 'mpesa' && (
                       <div className="mt-4 ml-9">
                         <Label htmlFor="mpesaPhone">M-Pesa Phone Number</Label>
-                        <Input id="mpesaPhone" placeholder="+254 700 000 000" value={mpesaPhone}
+                        <Input id="mpesaPhone" placeholder="07xx xxx xxx" value={mpesaPhone}
                           onChange={e => setMpesaPhone(e.target.value)} className="max-w-xs" />
                         <p className="text-xs text-gray-500 mt-1">Enter the M-Pesa registered number</p>
                       </div>

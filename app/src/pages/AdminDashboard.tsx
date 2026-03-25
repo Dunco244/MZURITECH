@@ -770,7 +770,7 @@ export default function AdminDashboard() {
             {activeTab === "dashboard" && <DashboardView stats={stats} loading={statsLoading} revenueHistory={revenueHistory} recentOrders={stats?.recentOrders ?? []} ordersByStatus={stats?.ordersByStatus ?? []} />}
             {activeTab === "live" && <LiveView stats={stats} orders={orders} revenueHistory={revenueHistory} onRefresh={() => { fetchStats(); fetchOrders(1, "all"); }} />}
             {activeTab === "orders" && <OrdersView orders={orders} loading={ordersLoading} pg={ordersPg} filter={orderFilter} setFilter={f => { setOrderFilter(f); fetchOrders(1, f); }} onPage={p => fetchOrders(p, orderFilter)} onUpdateStatus={handleUpdateOrderStatus} />}
-            {activeTab === "products" && <ProductsView products={products} loading={productsLoading} pg={productsPg} search={productSearch} setSearch={setProductSearch} onAdd={() => { setProductForm({ name: "", description: "", price: "", originalPrice: "", category: "laptops", brand: "", image: "", stockQuantity: "0", badge: "" }); setImagePreview(""); setProductError(""); setSpecs([]); setSpecsError(""); loadSpecTemplate(productForm.category || "laptops"); setProductModal({ open: true, mode: "add" }); }} onEdit={p => { setProductForm({ name: p.name, description: p.description ?? "", price: String(p.price), originalPrice: String(p.originalPrice ?? ""), category: p.category ?? "laptops", brand: p.brand, image: typeof p.image === "string" ? p.image : (p.image?.url ?? ""), stockQuantity: String(p.stockQuantity ?? 0), badge: p.badge ?? "" }); setImagePreview(getImageUrlFrom(p.image)); setProductError(""); setProductModal({ open: true, mode: "edit", product: p });
+            {activeTab === "products" && <ProductsView products={products} loading={productsLoading} pg={productsPg} search={productSearch} setSearch={setProductSearch} isMobile={isMobile} onAdd={() => { setProductForm({ name: "", description: "", price: "", originalPrice: "", category: "laptops", brand: "", image: "", stockQuantity: "0", badge: "" }); setImagePreview(""); setProductError(""); setSpecs([]); setSpecsError(""); loadSpecTemplate(productForm.category || "laptops"); setProductModal({ open: true, mode: "add" }); }} onEdit={p => { setProductForm({ name: p.name, description: p.description ?? "", price: String(p.price), originalPrice: String(p.originalPrice ?? ""), category: p.category ?? "laptops", brand: p.brand, image: typeof p.image === "string" ? p.image : (p.image?.url ?? ""), stockQuantity: String(p.stockQuantity ?? 0), badge: p.badge ?? "" }); setImagePreview(getImageUrlFrom(p.image)); setProductError(""); setProductModal({ open: true, mode: "edit", product: p });
             setSpecsError("");
             if (p.specs && typeof p.specs === "object") {
               const entries = Object.entries(p.specs as Record<string,string>);
@@ -1326,8 +1326,8 @@ function OrdersView({ orders, loading, pg, filter, setFilter, onPage, onUpdateSt
 }
 
 // ─── ProductsView ─────────────────────────────────────────────────────────────
-function ProductsView({ products, loading, pg, search, setSearch, onAdd, onEdit, onDelete, onPage }: {
-  products: Product[]; loading: boolean; pg: Pagination; search: string; setSearch: (s: string) => void;
+function ProductsView({ products, loading, pg, search, setSearch, isMobile, onAdd, onEdit, onDelete, onPage }: {
+  products: Product[]; loading: boolean; pg: Pagination; search: string; setSearch: (s: string) => void; isMobile: boolean;
   onAdd: () => void; onEdit: (p: Product) => void; onDelete: (p: Product) => void; onPage: (p: number) => void;
 }) {
   const filtered = products.filter(p =>
@@ -1351,45 +1351,79 @@ function ProductsView({ products, loading, pg, search, setSearch, onAdd, onEdit,
       </div>
       <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: 18, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
         {loading ? <Spinner /> : filtered.length === 0 ? <EmptyState icon="📦" text="No products found" /> : (
-          <table>
-            <thead><tr><th>Product</th><th>Category</th><th>Brand</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
-            <tbody>
+          isMobile ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: 12 }}>
               {filtered.map(p => {
                 const imgSrc = getImageUrlFrom(p.image) || getImageUrlFrom(p.images?.[0]);
                 return (
-                  <tr key={p._id}>
-                    <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div style={{ width: 44, height: 44, borderRadius: 10, background: "#f8fafc", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #f1f5f9" }}>
-                          {imgSrc
-                            ? <img src={imgSrc} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
-                            : <span style={{ fontSize: 20 }}>📦</span>}
-                        </div>
-                        <div>
-                          <div style={{ color: "#1e293b", fontWeight: 600 }}>{p.name}</div>
-                          {p.badge && <span style={{ fontSize: 10, color: "#2563eb", background: "#eff6ff", padding: "1px 7px", borderRadius: 10 }}>{p.badge}</span>}
-                        </div>
+                  <div key={p._id} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 12, background: "#fff" }}>
+                    <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                      <div style={{ width: 52, height: 52, borderRadius: 12, background: "#f8fafc", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #f1f5f9" }}>
+                        {imgSrc
+                          ? <img src={imgSrc} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 4 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                          : <span style={{ fontSize: 20 }}>📦</span>}
                       </div>
-                    </td>
-                    <td style={{ textTransform: "capitalize", color: "#64748b" }}>{p.category ?? "—"}</td>
-                    <td style={{ color: "#374151" }}>{p.brand}</td>
-                    <td style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#0f172a" }}>{formatKES(p.price)}</td>
-                    <td>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ color: "#0f172a", fontWeight: 700, fontSize: 14 }}>{p.name}</div>
+                        <div style={{ color: "#94a3b8", fontSize: 12, marginTop: 2 }}>{p.category ?? "—"} • {p.brand}</div>
+                        {p.badge && <span style={{ fontSize: 10, color: "#2563eb", background: "#eff6ff", padding: "2px 8px", borderRadius: 10, display: "inline-block", marginTop: 6 }}>{p.badge}</span>}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 10 }}>
+                      <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#0f172a" }}>{formatKES(p.price)}</div>
                       <span style={{ fontSize: 11, fontWeight: 600, color: p.inStock ? "#059669" : "#dc2626", background: p.inStock ? "#dcfce7" : "#fee2e2", padding: "3px 9px", borderRadius: 10 }}>
                         {p.inStock ? "In Stock" : "Out of Stock"}
                       </span>
-                    </td>
-                    <td>
-                      <div style={{ display: "flex", gap: 6 }}>
-                        <button className="icon-btn" onClick={() => onEdit(p)} title="Edit">✎</button>
-                        <button className="icon-btn danger" onClick={() => onDelete(p)} title="Delete">🗑</button>
-                      </div>
-                    </td>
-                  </tr>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                      <button className="action-btn primary" style={{ fontSize: 12, flex: 1 }} onClick={() => onEdit(p)}>✎ Edit</button>
+                      <button className="action-btn danger" style={{ fontSize: 12, flex: 1 }} onClick={() => onDelete(p)}>🗑 Delete</button>
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          ) : (
+            <table>
+              <thead><tr><th>Product</th><th>Category</th><th>Brand</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
+              <tbody>
+                {filtered.map(p => {
+                  const imgSrc = getImageUrlFrom(p.image) || getImageUrlFrom(p.images?.[0]);
+                  return (
+                    <tr key={p._id}>
+                      <td>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <div style={{ width: 44, height: 44, borderRadius: 10, background: "#f8fafc", overflow: "hidden", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #f1f5f9" }}>
+                            {imgSrc
+                              ? <img src={imgSrc} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                              : <span style={{ fontSize: 20 }}>📦</span>}
+                          </div>
+                          <div>
+                            <div style={{ color: "#1e293b", fontWeight: 600 }}>{p.name}</div>
+                            {p.badge && <span style={{ fontSize: 10, color: "#2563eb", background: "#eff6ff", padding: "1px 7px", borderRadius: 10 }}>{p.badge}</span>}
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ textTransform: "capitalize", color: "#64748b" }}>{p.category ?? "—"}</td>
+                      <td style={{ color: "#374151" }}>{p.brand}</td>
+                      <td style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: "#0f172a" }}>{formatKES(p.price)}</td>
+                      <td>
+                        <span style={{ fontSize: 11, fontWeight: 600, color: p.inStock ? "#059669" : "#dc2626", background: p.inStock ? "#dcfce7" : "#fee2e2", padding: "3px 9px", borderRadius: 10 }}>
+                          {p.inStock ? "In Stock" : "Out of Stock"}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={{ display: "flex", gap: 6 }}>
+                          <button className="icon-btn" onClick={() => onEdit(p)} title="Edit">✎</button>
+                          <button className="icon-btn danger" onClick={() => onDelete(p)} title="Delete">🗑</button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )
         )}
         <Paginator pg={pg} onPage={onPage} />
       </div>

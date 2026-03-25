@@ -733,41 +733,66 @@ Return ONLY a JSON array of objects with "key" and "value" fields. No markdown, 
                     ? <Empty icon="📦" title="No products yet" sub="Start selling by adding your first product." cta={<button className="btn p" onClick={() => { resetForm(); setShowForm(true); }}>＋ Add First Product</button>} />
                     : filtered.length === 0
                     ? <Empty icon="🔍" title="No results" sub={`No products match "${search}"`} />
-                    : <table>
-                        <thead><tr><th>Product</th><th>Category</th><th>Brand</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody>
+                    : isMobile
+                      ? <div style={{ display: 'flex', flexDirection: 'column', gap: 10, padding: 12 }}>
                           {filtered.map(p => (
-                            <tr key={p.id}>
-                              <td>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f8fafc', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #f1f5f9' }}>
-                                    {p.image ? <img src={imgUrl(p.image)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} /> : <span style={{ fontSize: 20 }}>📦</span>}
-                                  </div>
-                                  <div>
-                                    <p style={{ color: '#1e293b', fontWeight: 600, fontSize: 13 }}>{p.name}</p>
-                                    {p.originalPrice && <p style={{ color: '#94a3b8', fontSize: 11, textDecoration: 'line-through', fontFamily: "'DM Mono',monospace" }}>{fmt(p.originalPrice)}</p>}
-                                  </div>
+                            <div key={p.id} style={{ border: '1px solid #e2e8f0', borderRadius: 14, padding: 12, background: '#fff' }}>
+                              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                                <div style={{ width: 52, height: 52, borderRadius: 12, background: '#f8fafc', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #f1f5f9' }}>
+                                  {p.image ? <img src={imgUrl(p.image)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 4 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} /> : <span style={{ fontSize: 20 }}>📦</span>}
                                 </div>
-                              </td>
-                              <td style={{ textTransform: 'capitalize', color: '#64748b' }}>{p.category}</td>
-                              <td>{p.brand}</td>
-                              <td style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: '#0f172a' }}>{fmt(p.price)}</td>
-                              <td>
-                                <span style={{ fontFamily: "'DM Mono',monospace", color: p.stockQuantity === 0 ? '#dc2626' : p.stockQuantity <= 5 ? '#d97706' : '#374151', fontWeight: p.stockQuantity <= 5 ? 700 : 400 }}>
-                                  {p.stockQuantity}{p.stockQuantity > 0 && p.stockQuantity <= 5 ? ' ⚠' : ''}
-                                </span>
-                              </td>
-                              <td><SBadge status={p.inStock ? 'instock' : 'outofstock'} /></td>
-                              <td>
-                                <div style={{ display: 'flex', gap: 6 }}>
-                                  <button className="ibtn" title="Edit" onClick={() => openEdit(p)}>✎</button>
-                                  <button className="ibtn rd" title="Delete" onClick={() => setDelModal(p)}>🗑</button>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ color: '#0f172a', fontWeight: 700, fontSize: 14 }}>{p.name}</div>
+                                  <div style={{ color: '#94a3b8', fontSize: 12, marginTop: 2 }}>{p.category} • {p.brand}</div>
+                                  {p.originalPrice && <div style={{ color: '#94a3b8', fontSize: 11, textDecoration: 'line-through', fontFamily: "'DM Mono',monospace", marginTop: 4 }}>{fmt(p.originalPrice)}</div>}
                                 </div>
-                              </td>
-                            </tr>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                                <div style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: '#0f172a' }}>{fmt(p.price)}</div>
+                                <SBadge status={p.inStock ? 'instock' : 'outofstock'} />
+                              </div>
+                              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                                <button className="btn g sm" style={{ flex: 1 }} onClick={() => openEdit(p)}>✎ Edit</button>
+                                <button className="btn d sm" style={{ flex: 1 }} onClick={() => setDelModal(p)}>🗑 Delete</button>
+                              </div>
+                            </div>
                           ))}
-                        </tbody>
-                      </table>
+                        </div>
+                      : <table>
+                          <thead><tr><th>Product</th><th>Category</th><th>Brand</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead>
+                          <tbody>
+                            {filtered.map(p => (
+                              <tr key={p.id}>
+                                <td>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                    <div style={{ width: 44, height: 44, borderRadius: 10, background: '#f8fafc', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #f1f5f9' }}>
+                                      {p.image ? <img src={imgUrl(p.image)} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'contain', padding: 2 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} /> : <span style={{ fontSize: 20 }}>📦</span>}
+                                    </div>
+                                    <div>
+                                      <p style={{ color: '#1e293b', fontWeight: 600, fontSize: 13 }}>{p.name}</p>
+                                      {p.originalPrice && <p style={{ color: '#94a3b8', fontSize: 11, textDecoration: 'line-through', fontFamily: "'DM Mono',monospace" }}>{fmt(p.originalPrice)}</p>}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style={{ textTransform: 'capitalize', color: '#64748b' }}>{p.category}</td>
+                                <td>{p.brand}</td>
+                                <td style={{ fontFamily: "'DM Mono',monospace", fontWeight: 700, color: '#0f172a' }}>{fmt(p.price)}</td>
+                                <td>
+                                  <span style={{ fontFamily: "'DM Mono',monospace", color: p.stockQuantity === 0 ? '#dc2626' : p.stockQuantity <= 5 ? '#d97706' : '#374151', fontWeight: p.stockQuantity <= 5 ? 700 : 400 }}>
+                                    {p.stockQuantity}{p.stockQuantity > 0 && p.stockQuantity <= 5 ? ' ⚠' : ''}
+                                  </span>
+                                </td>
+                                <td><SBadge status={p.inStock ? 'instock' : 'outofstock'} /></td>
+                                <td>
+                                  <div style={{ display: 'flex', gap: 6 }}>
+                                    <button className="ibtn" title="Edit" onClick={() => openEdit(p)}>✎</button>
+                                    <button className="ibtn rd" title="Delete" onClick={() => setDelModal(p)}>🗑</button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
                   }
                 </div>
               </div>

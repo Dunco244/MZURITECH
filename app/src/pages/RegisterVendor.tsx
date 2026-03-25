@@ -10,14 +10,14 @@ import {
 export default function RegisterVendor() {
   const [name, setName]                         = useState('');
   const [email, setEmail]                       = useState('');
-  const [phone, setPhone]                       = useState('+254');
+  const [phone, setPhone]                       = useState('');
   const [password, setPassword]                 = useState('');
   const [confirmPassword, setConfirmPassword]   = useState('');
   const [showPassword, setShowPassword]         = useState(false);
   const [showConfirm, setShowConfirm]           = useState(false);
   const [businessName, setBusinessName]         = useState('');
   const [businessDescription, setBusinessDescription] = useState('');
-  const [businessPhone, setBusinessPhone]       = useState('+254');
+  const [businessPhone, setBusinessPhone]       = useState('');
   const [error, setError]                       = useState('');
   const [isLoading, setIsLoading]               = useState(false);
   const [touched, setTouched]                   = useState<Record<string, boolean>>({});
@@ -42,15 +42,18 @@ export default function RegisterVendor() {
     return null;
   };
 
+  const normalizePhone = (value: string) => value.replace(/\s+/g, '').replace(/-/g, '');
   const phoneError = () => {
-    if (!phone || phone === '+254') return 'Phone number is required';
-    if (!/^\+254\d{9}$/.test(phone)) return 'Must start with +254 followed by exactly 9 digits';
+    const v = normalizePhone(phone);
+    if (!v) return 'Phone number is required';
+    if (!/^(?:\+254|0)7\d{8}$/.test(v)) return 'Use 07XXXXXXXX or +2547XXXXXXXX';
     return null;
   };
 
   const businessPhoneError = () => {
-    if (!businessPhone || businessPhone === '+254') return null; // optional
-    if (!/^\+254\d{9}$/.test(businessPhone)) return 'Must start with +254 followed by exactly 9 digits';
+    const v = normalizePhone(businessPhone);
+    if (!v) return null; // optional
+    if (!/^(?:\+254|0)7\d{8}$/.test(v)) return 'Use 07XXXXXXXX or +2547XXXXXXXX';
     return null;
   };
 
@@ -290,7 +293,7 @@ export default function RegisterVendor() {
                     <label style={{ display:'block', fontSize:12, fontWeight:700, color:'#374151', marginBottom:6, textTransform:'uppercase', letterSpacing:'.06em' }}>Phone *</label>
                     <div style={{ position:'relative' }}>
                       <span className="field-icon"><Phone size={15} color="#94a3b8" /></span>
-                      <input className="vr-input" type="tel" placeholder="+254 700 000 000"
+                      <input className="vr-input" type="tel" placeholder="07xx xxx xxx"
                         value={phone} onChange={e => setPhone(e.target.value)} onBlur={() => touch('phone')}
                         style={{ borderColor: touched.phone && phoneError() ? '#ef4444' : '#e2e8f0' }}
                         autoComplete="tel" />
@@ -309,7 +312,7 @@ export default function RegisterVendor() {
                     </label>
                     <div style={{ position:'relative' }}>
                       <span className="field-icon"><Phone size={15} color="#94a3b8" /></span>
-                      <input className="vr-input" type="tel" placeholder="+254 700 000 000"
+                      <input className="vr-input" type="tel" placeholder="07xx xxx xxx"
                         value={businessPhone} onChange={e => setBusinessPhone(e.target.value)} onBlur={() => touch('businessPhone')}
                         style={{ borderColor: touched.businessPhone && businessPhoneError() ? '#ef4444' : '#e2e8f0' }}
                         autoComplete="tel" />
