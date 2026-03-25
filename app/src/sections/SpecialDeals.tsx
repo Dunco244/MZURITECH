@@ -94,7 +94,6 @@ const FALLBACK_DEALS: DealItem[] = [
   },
 ];
 
-// Keep the original countdown: 3 days, 12 hours, 45 minutes, 30 seconds
 const DEAL_DURATION_MS = (3 * 24 * 60 * 60 + 12 * 60 * 60 + 45 * 60 + 30) * 1000;
 const STORAGE_KEY_INDEX = "mzuri_deal_index";
 const STORAGE_KEY_NEXT  = "mzuri_deal_next_at";
@@ -180,18 +179,26 @@ export default function SpecialDeals() {
         const res = await fetch(`${API_URL}/api/products?limit=20`);
         const data = await res.json();
         const products: Product[] = data.products || data || [];
+
+        // ✅ FIX: guard originalPrice before using it in arithmetic
         const candidates = products.filter(p => {
-          const hasDiscount = p.originalPrice && p.originalPrice > p.price;
-          const pct = hasDiscount ? Math.round((1 - p.price / p.originalPrice) * 100) : 0;
+          if (!p.originalPrice || p.originalPrice <= p.price) return false;
+          const pct = Math.round((1 - p.price / p.originalPrice) * 100);
           return (p.badge === 'Featured' || p.badge === 'Sale') && pct >= 20;
         });
+
         const list = (candidates.length > 0 ? candidates : products).slice(0, 6);
+
         const mapped: DealItem[] = list.map(p => {
           const img = pickFirstProductImage(p.image, p.images as any);
           const price = formatKES(p.price);
-          const savePct = p.originalPrice && p.originalPrice > p.price
-            ? Math.round((1 - p.price / p.originalPrice) * 100)
-            : null;
+
+          // ✅ FIX: guard originalPrice before using it in arithmetic
+          const savePct =
+            p.originalPrice && p.originalPrice > p.price
+              ? Math.round((1 - p.price / p.originalPrice) * 100)
+              : null;
+
           const productForCart: ProductForCart = {
             id: p._id,
             name: p.name,
@@ -208,6 +215,7 @@ export default function SpecialDeals() {
             stockQuantity: p.stockQuantity,
             badge: p.badge,
           };
+
           return {
             title: p.name,
             highlight: "Deal",
@@ -219,6 +227,7 @@ export default function SpecialDeals() {
             product: productForCart,
           };
         });
+
         if (mounted && mapped.length > 0) {
           setDeals(mapped);
         }
@@ -257,7 +266,6 @@ export default function SpecialDeals() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Background sweep animation
       gsap.fromTo(
         '.deals-bg',
         { clipPath: 'circle(0% at 50% 50%)' },
@@ -272,7 +280,6 @@ export default function SpecialDeals() {
         }
       );
 
-      // Content animation
       gsap.fromTo(
         '.deals-content > *',
         { y: 50, opacity: 0 },
@@ -289,7 +296,6 @@ export default function SpecialDeals() {
         }
       );
 
-      // Product image animation
       gsap.fromTo(
         '.deals-image',
         { x: 100, opacity: 0, rotate: 5 },
@@ -306,7 +312,6 @@ export default function SpecialDeals() {
         }
       );
 
-      // Pendulum animation for product
       gsap.to('.deals-image', {
         rotate: 2,
         duration: 3,
@@ -400,4 +405,3 @@ export default function SpecialDeals() {
     </section>
   );
 }
-
