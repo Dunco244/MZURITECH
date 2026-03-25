@@ -198,7 +198,8 @@ export default function Vendors() {
   const navigate = useNavigate();
 
   const [tab, setTab]           = useState('dashboard');
-  const [sidebar, setSidebar]   = useState(true);
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth <= 900 : false));
+  const [sidebar, setSidebar]   = useState(() => (typeof window !== 'undefined' ? window.innerWidth > 900 : true));
   const [loading, setLoading]   = useState(true);
   const [stats, setStats]       = useState<VendorStats | null>(null);
   const [products, setProducts] = useState<VendorProduct[]>([]);
@@ -249,6 +250,22 @@ export default function Vendors() {
     setBiz({ businessName: (user as any)?.businessName || '', businessDescription: (user as any)?.businessDescription || '', businessPhone: (user as any)?.businessPhone || '' });
     load();
   }, [user, authLoading, token]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 900px)');
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      const matches = 'matches' in e ? e.matches : (e as MediaQueryList).matches;
+      setIsMobile(matches);
+      if (matches) setSidebar(false);
+      else setSidebar(true);
+    };
+    onChange(mq);
+    mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange as any);
+    return () => {
+      mq.removeEventListener ? mq.removeEventListener('change', onChange) : mq.removeListener(onChange as any);
+    };
+  }, []);
 
   const load = async () => {
     if (!token) return;
@@ -480,8 +497,34 @@ Return ONLY a JSON array of objects with "key" and "value" fields. No markdown, 
 
       <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc' }}>
 
+        {/* Mobile overlay */}
+        {isMobile && sidebar && (
+          <div
+            onClick={() => setSidebar(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.35)', zIndex: 900 }}
+          />
+        )}
+
         {/* ── Sidebar ── */}
-        <aside style={{ width: sidebar ? 234 : 64, flexShrink: 0, transition: 'width .3s cubic-bezier(.4,0,.2,1)', background: '#fff', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh', overflow: 'hidden', boxShadow: '2px 0 8px rgba(0,0,0,0.04)', zIndex: 200 }}>
+        <aside
+          style={{
+            width: isMobile ? 260 : (sidebar ? 234 : 64),
+            flexShrink: 0,
+            transition: 'transform .25s ease, width .3s cubic-bezier(.4,0,.2,1)',
+            background: '#fff',
+            borderRight: '1px solid #e2e8f0',
+            display: 'flex',
+            flexDirection: 'column',
+            position: isMobile ? 'fixed' : 'sticky',
+            left: 0,
+            top: 0,
+            height: '100vh',
+            overflow: 'hidden',
+            boxShadow: '2px 0 10px rgba(0,0,0,0.08)',
+            zIndex: 1000,
+            transform: isMobile ? (sidebar ? 'translateX(0)' : 'translateX(-100%)') : 'none',
+          }}
+        >
           <div style={{ padding: '18px 14px 14px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: 'linear-gradient(135deg,#2563eb,#4f46e5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏪</div>
             {sidebar && <span style={{ fontSize: 16, fontWeight: 800, color: '#0f172a', whiteSpace: 'nowrap' }}>VendorHub</span>}
@@ -530,7 +573,7 @@ Return ONLY a JSON array of objects with "key" and "value" fields. No markdown, 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
           {/* Header */}
-          <header style={{ height: 62, borderBottom: '1px solid #e2e8f0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', position: 'sticky', top: 0, zIndex: 100, flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+          <header style={{ height: 62, borderBottom: '1px solid #e2e8f0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '0 14px' : '0 24px', position: 'sticky', top: 0, zIndex: 100, flexShrink: 0, boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <button className="ibtn" onClick={() => setSidebar(s => !s)}>☰</button>
               <div>
@@ -553,7 +596,7 @@ Return ONLY a JSON array of objects with "key" and "value" fields. No markdown, 
             </div>
           </header>
 
-          <main style={{ flex: 1, overflow: 'auto', padding: 24 }}>
+          <main style={{ flex: 1, overflow: 'auto', padding: isMobile ? 14 : 24 }}>
 
             {/* ══ DASHBOARD ══ */}
             {tab === 'dashboard' && (

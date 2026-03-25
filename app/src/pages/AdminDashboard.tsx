@@ -167,7 +167,8 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab]     = useState("dashboard");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile]       = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 900 : false));
+  const [sidebarOpen, setSidebarOpen] = useState(() => (typeof window !== "undefined" ? window.innerWidth > 900 : true));
   const [notifOpen, setNotifOpen]     = useState(false);
 
   // ✅ ADDED: Toast state for feedback on all order actions
@@ -276,6 +277,22 @@ export default function AdminDashboard() {
     if (!authLoading && !token) { navigate("/login"); return; }
     if (!authLoading && user && user.role !== "admin") { navigate("/"); }
   }, [authLoading, token, user, navigate]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(max-width: 900px)");
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      const matches = "matches" in e ? e.matches : (e as MediaQueryList).matches;
+      setIsMobile(matches);
+      if (matches) setSidebarOpen(false);
+      else setSidebarOpen(true);
+    };
+    onChange(mq);
+    mq.addEventListener ? mq.addEventListener("change", onChange) : mq.addListener(onChange as any);
+    return () => {
+      mq.removeEventListener ? mq.removeEventListener("change", onChange) : mq.removeListener(onChange as any);
+    };
+  }, []);
 
   const authHeaders = useCallback((): Record<string, string> => ({
     "Content-Type": "application/json",
@@ -630,8 +647,34 @@ export default function AdminDashboard() {
 
       <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
 
+        {/* Mobile overlay */}
+        {isMobile && sidebarOpen && (
+          <div
+            onClick={() => setSidebarOpen(false)}
+            style={{ position: "fixed", inset: 0, background: "rgba(15,23,42,0.35)", zIndex: 900 }}
+          />
+        )}
+
         {/* ── Sidebar ── */}
-        <aside style={{ width: sidebarOpen ? 230 : 64, flexShrink: 0, transition: "width .3s cubic-bezier(.4,0,.2,1)", background: "#ffffff", borderRight: "1px solid #e2e8f0", display: "flex", flexDirection: "column", position: "sticky", top: 0, height: "100vh", overflow: "hidden", boxShadow: "2px 0 8px rgba(0,0,0,0.04)" }}>
+        <aside
+          style={{
+            width: isMobile ? 260 : (sidebarOpen ? 230 : 64),
+            flexShrink: 0,
+            transition: "transform .25s ease, width .3s cubic-bezier(.4,0,.2,1)",
+            background: "#ffffff",
+            borderRight: "1px solid #e2e8f0",
+            display: "flex",
+            flexDirection: "column",
+            position: isMobile ? "fixed" : "sticky",
+            left: 0,
+            top: 0,
+            height: "100vh",
+            overflow: "hidden",
+            boxShadow: "2px 0 10px rgba(0,0,0,0.08)",
+            transform: isMobile ? (sidebarOpen ? "translateX(0)" : "translateX(-100%)") : "none",
+            zIndex: 1000,
+          }}
+        >
           <div style={{ padding: "18px 14px 14px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, flexShrink: 0, background: "linear-gradient(135deg,#2563eb,#4f46e5)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>⚡</div>
             {sidebarOpen && <span style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", whiteSpace: "nowrap" }}>AdminHub</span>}
@@ -674,7 +717,7 @@ export default function AdminDashboard() {
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
           {/* Header */}
-          <header style={{ height: 62, borderBottom: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", position: "sticky", top: 0, zIndex: 100, flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
+          <header style={{ height: 62, borderBottom: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: isMobile ? "0 14px" : "0 24px", position: "sticky", top: 0, zIndex: 100, flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
               <button className="icon-btn" onClick={() => setSidebarOpen(s => !s)}>☰</button>
               <span style={{ color: "#0f172a", fontWeight: 700, fontSize: 16 }}>
@@ -718,7 +761,7 @@ export default function AdminDashboard() {
           </header>
 
           {/* Content */}
-          <main style={{ flex: 1, overflow: "auto", padding: 24 }} onClick={() => notifOpen && setNotifOpen(false)}>
+          <main style={{ flex: 1, overflow: "auto", padding: isMobile ? 14 : 24 }} onClick={() => notifOpen && setNotifOpen(false)}>
             {activeTab === "dashboard" && <DashboardView stats={stats} loading={statsLoading} revenueHistory={revenueHistory} recentOrders={stats?.recentOrders ?? []} ordersByStatus={stats?.ordersByStatus ?? []} />}
             {activeTab === "live" && <LiveView stats={stats} orders={orders} revenueHistory={revenueHistory} onRefresh={() => { fetchStats(); fetchOrders(1, "all"); }} />}
             {activeTab === "orders" && <OrdersView orders={orders} loading={ordersLoading} pg={ordersPg} filter={orderFilter} setFilter={f => { setOrderFilter(f); fetchOrders(1, f); }} onPage={p => fetchOrders(p, orderFilter)} onUpdateStatus={handleUpdateOrderStatus} />}

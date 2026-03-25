@@ -503,6 +503,11 @@ export default function Profile() {
         .expand-btn:hover { background:#f8faff; color:#1d4ed8; }
         .item-row { display:flex; gap:10px; align-items:center; padding:10px 0; border-bottom:1px solid #f1f5f9; }
         .item-row:last-child { border-bottom:none; }
+        @media (max-width: 900px) {
+          .profile-hero-row { flex-direction: column; align-items: flex-start; gap: 16px; }
+          .profile-tabs { width: 100% !important; flex-wrap: wrap; }
+          .profile-grid-2 { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       <div className="profile-root min-h-screen py-12" style={{ background: 'linear-gradient(135deg,#f0f7ff 0%,#fafbff 50%,#f5f0ff 100%)' }}>
@@ -513,7 +518,7 @@ export default function Profile() {
             <div className="card" style={{ padding: '28px 32px', background: 'linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 50%,#2563eb 100%)', border: 'none', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position:'absolute', top:-40, right:-40, width:200, height:200, borderRadius:'50%', background:'rgba(255,255,255,.06)' }} />
               <div style={{ position:'absolute', bottom:-60, right:80, width:150, height:150, borderRadius:'50%', background:'rgba(255,255,255,.04)' }} />
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative' }}>
+              <div className="profile-hero-row" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', position:'relative' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:18 }}>
                   <div style={{ width:72, height:72, borderRadius:'50%', background:'rgba(255,255,255,.15)', border:'3px solid rgba(255,255,255,.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:28, fontWeight:800, color:'white', flexShrink:0 }}>
                     {user.name?.split(' ').map((n: string) => n[0]).join('').slice(0,2).toUpperCase()}
@@ -551,7 +556,7 @@ export default function Profile() {
           </div>
 
           {/* ── Tabs ────────────────────────────────────────────────────── */}
-          <div className="fade-up" style={{ display:'flex', gap:6, marginBottom:20, background:'white', padding:6, borderRadius:14, border:'1.5px solid #e8edf5', width:'fit-content', animationDelay:'.05s' }}>
+          <div className="fade-up profile-tabs" style={{ display:'flex', gap:6, marginBottom:20, background:'white', padding:6, borderRadius:14, border:'1.5px solid #e8edf5', width:'fit-content', animationDelay:'.05s' }}>
             {(['profile', 'orders', 'rewards', 'referral'] as const).map(tab => (
               <button key={tab} className={`tab-btn${activeTab === tab ? ' active' : ''}`} onClick={() => setActiveTab(tab)}>
                 {tab === 'profile'  && <><User        size={14} style={{ display:'inline', marginRight:6 }} />Profile</>}
@@ -585,7 +590,7 @@ export default function Profile() {
                 )}
 
                 <form onSubmit={handleSubmit}>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
+                  <div className="profile-grid-2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
                     <div>
                       <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#475569', marginBottom:6 }}>Full Name</label>
                       <input className="field-input" name="name" value={formData.name} onChange={handleChange} placeholder="Your full name" />
@@ -613,7 +618,7 @@ export default function Profile() {
                     <span style={{ fontWeight:700, fontSize:14, color:'#0f172a' }}>Shipping Address</span>
                   </div>
 
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
+                  <div className="profile-grid-2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
                     <div style={{ gridColumn:'1/-1' }}>
                       <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#475569', marginBottom:6 }}>Street Address</label>
                       <input className="field-input" name="street" value={formData.street} onChange={handleChange} placeholder="123 Main St" />
@@ -790,7 +795,7 @@ export default function Profile() {
                     {/* Expanded details */}
                     {open && (
                       <div style={{ padding:'16px 20px' }}>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                        <div className="profile-grid-2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
 
                           {/* Items */}
                           <div style={{ gridColumn:'1/-1' }}>
@@ -892,7 +897,7 @@ export default function Profile() {
                 <div style={{ fontWeight:700, fontSize:15, color:'#0f172a', marginBottom:16, display:'flex', alignItems:'center', gap:8 }}>
                   <TrendingUp size={16} color="#1d4ed8" /> How to Earn Points
                 </div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div className="profile-grid-2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                   {[
                     { icon:'🛍️', title:'Every Purchase',   desc:`Earn ${POINTS_PER_KES} pt per KES 100 spent`,        pts:'+1 pt/KES 100' },
                     { icon:'👥', title:'Refer a Friend',   desc:`${REFERRAL_BONUS} points when they sign up & order`, pts:`+${REFERRAL_BONUS} pts` },
@@ -1005,7 +1010,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
+              <div className="profile-grid-2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
                 <div className="card" style={{ padding:'24px', textAlign:'center' }}>
                   <div style={{ fontSize:36, marginBottom:8 }}>👥</div>
                   <div style={{ fontSize:32, fontWeight:800, color:'#1d4ed8', fontFamily:"'DM Mono',monospace" }}>{rewards?.referralCount ?? 0}</div>
