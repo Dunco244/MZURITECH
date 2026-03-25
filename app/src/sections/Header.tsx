@@ -126,6 +126,8 @@ export default function Header() {
   const searchWrapRef       = useRef<HTMLDivElement>(null);
   const mobileSearchWrapRef = useRef<HTMLDivElement>(null);
   const debounceRef         = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef            = useRef<AbortController | null>(null);
+  const searchCacheRef      = useRef<Map<string, Product[]>>(new Map());
   const wishlistCount       = wishlist.length;
 
   const searchCategories = [
@@ -189,20 +191,34 @@ export default function Header() {
 
   const liveSearch = useCallback(async (q: string) => {
     if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return; }
+    const key = `${selectedCat.id}::${q.trim().toLowerCase()}`;
+    const cached = searchCacheRef.current.get(key);
+    if (cached) { setSearchResults(cached); setSearchLoading(false); return; }
     setSearchLoading(true);
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const catParam = selectedCat.id !== 'all' ? `&category=${selectedCat.id}` : '';
-      const res  = await fetch(`${API_URL}/api/products?search=${encodeURIComponent(q)}${catParam}&limit=6`);
+      const res  = await fetch(
+        `${API_URL}/api/products?search=${encodeURIComponent(q)}${catParam}&limit=6`,
+        { signal: controller.signal }
+      );
       const data = await res.json();
-      setSearchResults(data.products || data || []);
-    } catch { setSearchResults([]); }
-    finally   { setSearchLoading(false); }
+      const results = data.products || data || [];
+      searchCacheRef.current.set(key, results);
+      setSearchResults(results);
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') setSearchResults([]);
+    } finally {
+      if (!controller.signal.aborted) setSearchLoading(false);
+    }
   }, [selectedCat.id]);
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (searchQuery.trim().length >= 2) {
-      debounceRef.current = setTimeout(() => liveSearch(searchQuery), 280);
+      debounceRef.current = setTimeout(() => liveSearch(searchQuery), 380);
     } else { setSearchResults([]); setSearchLoading(false); }
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchQuery, liveSearch]);
@@ -266,6 +282,8 @@ export default function Header() {
         .cat-trigger:hover{color:#1d4ed8}
         .search-wrap:focus-within .cat-trigger{border-right-color:#bfdbfe}
         .search-field{flex:1;border:none;background:transparent;outline:none;font-size:13.5px;color:#1e293b;padding:0 10px;height:40px;font-family:inherit;min-width:0}
+        .search-field::-webkit-search-cancel-button{display:none;-webkit-appearance:none}
+        .search-field::-ms-clear{display:none}
         .search-field::placeholder{color:#94a3b8}
         .search-submit{display:flex;align-items:center;justify-content:center;width:36px;height:32px;margin:4px;background:linear-gradient(135deg,#1d4ed8,#3b82f6);border:none;border-radius:8px;cursor:pointer;flex-shrink:0;transition:all .2s}
         .search-submit:hover{box-shadow:0 3px 10px rgba(59,130,246,.4);transform:scale(1.05)}
@@ -309,6 +327,8 @@ export default function Header() {
         .mob-search-bar{display:flex;background:#fff;border-radius:999px;overflow:hidden;border:2px solid #ef4444;width:100%;box-sizing:border-box}
         .mob-search-bar:focus-within{border-color:#dc2626;box-shadow:0 0 0 3px rgba(239,68,68,.12)}
         .mob-search-input{flex:1;border:none;background:transparent;outline:none;padding:9px 14px;font-size:13px;font-family:inherit;color:#1e293b;min-width:0}
+        .mob-search-input::-webkit-search-cancel-button{display:none;-webkit-appearance:none}
+        .mob-search-input::-ms-clear{display:none}
         .mob-search-input::placeholder{color:#9ca3af}
         .mob-search-btn{width:40px;background:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
       `}</style>
