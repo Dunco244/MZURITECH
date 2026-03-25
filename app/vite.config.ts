@@ -3,7 +3,9 @@ import react from "@vitejs/plugin-react"
 import { defineConfig } from "vite"
 
 export default defineConfig({
-  base: './',
+  // Use absolute base so deep links (like /reset-password/:token) can load assets correctly.
+  // Relative base breaks when opening routes directly from email.
+  base: '/',
   plugins: [react()],
   server: {
     host: true,       // ← allows phone/other devices to connect
