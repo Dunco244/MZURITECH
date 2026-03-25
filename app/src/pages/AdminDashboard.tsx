@@ -299,6 +299,14 @@ export default function AdminDashboard() {
     };
   }, []);
 
+  // Prevent horizontal overflow on small screens (mobile menu + tables/cards)
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const prev = document.body.style.overflowX;
+    document.body.style.overflowX = "hidden";
+    return () => { document.body.style.overflowX = prev; };
+  }, []);
+
   const authHeaders = useCallback((): Record<string, string> => ({
     "Content-Type": "application/json",
     Authorization: `Bearer ${token}`,
@@ -650,7 +658,7 @@ export default function AdminDashboard() {
         .upload-zone.dragover{border-color:#2563eb;background:#eff6ff}
       `}</style>
 
-      <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
+        <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc", overflowX: "hidden" }}>
 
         {/* Mobile overlay */}
         {isMobile && sidebarOpen && (
@@ -719,7 +727,7 @@ export default function AdminDashboard() {
         </aside>
 
         {/* ── Main ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", overflowX: "hidden", minWidth: 0 }}>
 
           {/* Header */}
           <header style={{ height: 62, borderBottom: "1px solid #e2e8f0", background: "#ffffff", display: "flex", alignItems: "center", justifyContent: "space-between", padding: isMobile ? "0 14px" : "0 24px", position: "sticky", top: 0, zIndex: 100, flexShrink: 0, boxShadow: "0 1px 4px rgba(0,0,0,0.04)" }}>
