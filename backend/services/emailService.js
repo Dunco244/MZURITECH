@@ -710,3 +710,48 @@ exports.sendAdminDeliveryFailedAlert = async ({ order, driver, reason }) => {
     return true;
   } catch (e) { console.error('❌ Admin delivery-failed alert failed:', e.message); return false; }
 };
+
+
+// ═════════════════════════════════════════════════════════════
+//  13. CONTACT FORM — sends to kibetdan202@gmail.com ✅ ADDED
+// ═════════════════════════════════════════════════════════════
+exports.sendContactEmail = async ({ name, email, subject, message }) => {
+  const body = `
+    <tr><td style="padding:40px;">
+      <h2 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#111827;">📩 New Contact Message</h2>
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;margin-bottom:24px;">
+        ${[
+          ['From',    name],
+          ['Email',   `<a href="mailto:${email}" style="color:#2563eb;text-decoration:none;">${email}</a>`],
+          ['Subject', subject || '(no subject)'],
+        ].map(([l, v]) => `
+          <tr>
+            <td style="padding:12px 18px;border-bottom:1px solid #e5e7eb;font-size:12px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;font-weight:600;width:90px;">${l}</td>
+            <td style="padding:12px 18px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#111827;">${v}</td>
+          </tr>`).join('')}
+      </table>
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:20px 24px;margin-bottom:28px;">
+        <p style="margin:0 0 10px;font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;">Message</p>
+        <p style="margin:0;font-size:15px;color:#374151;line-height:1.7;white-space:pre-wrap;">${message}</p>
+      </div>
+      <div style="text-align:center;">
+        <a href="mailto:${email}?subject=Re: ${encodeURIComponent(subject || 'Your message to MzuriTech')}"
+          style="display:inline-block;background:linear-gradient(135deg,#1a3faa,#2563eb);color:#fff;text-decoration:none;padding:13px 28px;border-radius:8px;font-size:15px;font-weight:600;">
+          ↩ Reply to ${name}
+        </a>
+      </div>
+    </td></tr>`;
+
+  try {
+    await sendMail({
+      to: 'kibetdan202@gmail.com',
+      subject: `📩 Contact: ${subject || 'New Message'} — from ${name}`,
+      html: wrapEmail(body),
+    });
+    console.log(`✅ Contact email → kibetdan202@gmail.com (from ${email})`);
+    return true;
+  } catch (e) {
+    console.error('❌ Contact email failed:', e.message);
+    throw e;
+  }
+};

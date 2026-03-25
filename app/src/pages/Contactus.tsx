@@ -21,12 +21,18 @@ export default function ContactUs() {
     setSending(true);
     setError('');
     try {
-      // If you have a contact endpoint wire it here; for now simulate success
-      await new Promise(r => setTimeout(r, 1200));
+      // ✅ FIXED: real API call to backend — sends to kibetdan202@gmail.com via Brevo
+      const res = await fetch(`${API_URL}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to send message.');
       setSent(true);
       setForm({ name: '', email: '', subject: '', message: '' });
-    } catch {
-      setError('Failed to send message. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to send message. Please try again.');
     } finally {
       setSending(false);
     }
@@ -51,9 +57,9 @@ export default function ContactUs() {
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-gray-900">Get in Touch</h2>
             {[
-              { icon: MapPin, label: 'Visit Us',    value: '123 Tech Street, Nairobi, Kenya' },
-              { icon: Phone,  label: 'Call Us',     value: '+254 718 010 222' },
-              { icon: Mail,   label: 'Email Us',    value: 'kibetdan202@gmail.com' },
+              { icon: MapPin, label: 'Visit Us',      value: '123 Tech Street, Nairobi, Kenya' },
+              { icon: Phone,  label: 'Call Us',       value: '+254 718 010 222' },
+              { icon: Mail,   label: 'Email Us',      value: 'kibetdan202@gmail.com' },
               { icon: Clock,  label: 'Working Hours', value: 'Mon–Sat, 8am – 6pm EAT' },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-start gap-4">
@@ -134,7 +140,9 @@ export default function ContactUs() {
                       className="mt-1 w-full px-3 py-2 text-sm border border-input rounded-md bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
                   </div>
                   <Button type="submit" className="btn-primary w-full py-5" disabled={sending}>
-                    {sending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</> : <><Send className="w-4 h-4 mr-2" /> Send Message</>}
+                    {sending
+                      ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Sending...</>
+                      : <><Send className="w-4 h-4 mr-2" /> Send Message</>}
                   </Button>
                 </form>
               )}

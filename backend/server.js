@@ -28,7 +28,8 @@ const vendorRoutes     = require('./routes/vendor');
 const newsletterRoutes = require('./routes/Newsletter');
 const driverRoutes     = require('./routes/Driverroutes');
 const deliveryRoutes   = require('./routes/Deliveryroutes');
-const rewardsRoutes    = require('./routes/RewardsRoute'); // ✅ ADDED
+const rewardsRoutes    = require('./routes/RewardsRoute');
+const contactRoutes    = require('./routes/Contact'); // ✅ ADDED
 
 const connectDB    = require('./config/db');
 const swaggerSpecs = require('./config/swagger');
@@ -46,7 +47,7 @@ const allowedOrigins = [
   'https://mzuritech.netlify.app',
   'https://69c10cd5dbbf3e0824de7f42--mzuritech.netlify.app',
   'https://69c113c60e84741f2529f706--mzuritech.netlify.app',
-  'https://69c120fb3c410539feb8f9f5--mzuritech.netlify.app', // ← add this
+  'https://69c120fb3c410539feb8f9f5--mzuritech.netlify.app',
   'https://69c12aea74f04800081c6ad2--mzuritech.netlify.app',
 ];
 const io = new Server(server, {
@@ -117,7 +118,8 @@ app.use('/api/vendor',     vendorRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/drivers',    driverRoutes);
 app.use('/api/deliveries', deliveryRoutes);
-app.use('/api/rewards',    rewardsRoutes); // ✅ ADDED
+app.use('/api/rewards',    rewardsRoutes);
+app.use('/api/contact',    contactRoutes); // ✅ ADDED
 
 // ==================== DEBUG ====================
 
