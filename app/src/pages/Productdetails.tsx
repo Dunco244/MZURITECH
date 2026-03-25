@@ -11,8 +11,9 @@ import { pickFirstProductImage, resolveProductImageUrl } from '@/lib/utils';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-function imgSrc(image?: string): string {
-  return resolveProductImageUrl(image ?? '');
+function imgSrc(image?: string | { url?: string } | null): string {
+  const raw = typeof image === 'string' ? image : (image?.url ?? '');
+  return resolveProductImageUrl(raw);
 }
 
 interface Product {
@@ -25,7 +26,7 @@ interface Product {
   brand?: string;
   category: string;
   image?: string;
-  images?: string[];
+  images?: Array<string | { url?: string }>;
   stockQuantity?: number;
   inStock?: boolean;
   badge?: string;
