@@ -15,7 +15,7 @@ interface Category {
 }
 interface Product {
   _id: string; name: string; price: number; originalPrice?: number; brand: string;
-  inStock: boolean; image?: string; images?: { url: string }[]; category?: string;
+  inStock: boolean; image?: string | { url?: string }; images?: Array<string | { url?: string }>; category?: string;
   description?: string; stockQuantity?: number; badge?: string; isActive?: boolean;
   specs?: Record<string, string>;
 }
@@ -64,6 +64,11 @@ function getImageUrl(img?: string): string {
   if (img.startsWith("http")) return img;
   if (img.startsWith("/uploads")) return `${API_URL}${img}`;
   return img;
+}
+function getImageUrlFrom(img?: string | { url?: string } | null): string {
+  if (!img) return "";
+  if (typeof img === "string") return getImageUrl(img);
+  return img.url ? getImageUrl(img.url) : "";
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -765,7 +770,7 @@ export default function AdminDashboard() {
             {activeTab === "dashboard" && <DashboardView stats={stats} loading={statsLoading} revenueHistory={revenueHistory} recentOrders={stats?.recentOrders ?? []} ordersByStatus={stats?.ordersByStatus ?? []} />}
             {activeTab === "live" && <LiveView stats={stats} orders={orders} revenueHistory={revenueHistory} onRefresh={() => { fetchStats(); fetchOrders(1, "all"); }} />}
             {activeTab === "orders" && <OrdersView orders={orders} loading={ordersLoading} pg={ordersPg} filter={orderFilter} setFilter={f => { setOrderFilter(f); fetchOrders(1, f); }} onPage={p => fetchOrders(p, orderFilter)} onUpdateStatus={handleUpdateOrderStatus} />}
-            {activeTab === "products" && <ProductsView products={products} loading={productsLoading} pg={productsPg} search={productSearch} setSearch={setProductSearch} onAdd={() => { setProductForm({ name: "", description: "", price: "", originalPrice: "", category: "laptops", brand: "", image: "", stockQuantity: "0", badge: "" }); setImagePreview(""); setProductError(""); setSpecs([]); setSpecsError(""); loadSpecTemplate(productForm.category || "laptops"); setProductModal({ open: true, mode: "add" }); }} onEdit={p => { setProductForm({ name: p.name, description: p.description ?? "", price: String(p.price), originalPrice: String(p.originalPrice ?? ""), category: p.category ?? "laptops", brand: p.brand, image: p.image ?? "", stockQuantity: String(p.stockQuantity ?? 0), badge: p.badge ?? "" }); setImagePreview(p.image ? getImageUrl(p.image) : ""); setProductError(""); setProductModal({ open: true, mode: "edit", product: p });
+            {activeTab === "products" && <ProductsView products={products} loading={productsLoading} pg={productsPg} search={productSearch} setSearch={setProductSearch} onAdd={() => { setProductForm({ name: "", description: "", price: "", originalPrice: "", category: "laptops", brand: "", image: "", stockQuantity: "0", badge: "" }); setImagePreview(""); setProductError(""); setSpecs([]); setSpecsError(""); loadSpecTemplate(productForm.category || "laptops"); setProductModal({ open: true, mode: "add" }); }} onEdit={p => { setProductForm({ name: p.name, description: p.description ?? "", price: String(p.price), originalPrice: String(p.originalPrice ?? ""), category: p.category ?? "laptops", brand: p.brand, image: typeof p.image === "string" ? p.image : (p.image?.url ?? ""), stockQuantity: String(p.stockQuantity ?? 0), badge: p.badge ?? "" }); setImagePreview(getImageUrlFrom(p.image)); setProductError(""); setProductModal({ open: true, mode: "edit", product: p });
             setSpecsError("");
             if (p.specs && typeof p.specs === "object") {
               const entries = Object.entries(p.specs as Record<string,string>);
@@ -1350,7 +1355,7 @@ function ProductsView({ products, loading, pg, search, setSearch, onAdd, onEdit,
             <thead><tr><th>Product</th><th>Category</th><th>Brand</th><th>Price</th><th>Stock</th><th>Actions</th></tr></thead>
             <tbody>
               {filtered.map(p => {
-                const imgSrc = p.image ? getImageUrl(p.image) : (p.images?.[0]?.url ? getImageUrl(p.images[0].url) : "");
+                const imgSrc = getImageUrlFrom(p.image) || getImageUrlFrom(p.images?.[0]);
                 return (
                   <tr key={p._id}>
                     <td>
@@ -1448,7 +1453,9 @@ function CategoriesView({ categories, loading, selectedCat, catProducts, catProd
                 {catProductsLoading ? <Spinner /> : catProducts.length === 0 ? <EmptyState icon="📭" text="No products in this category" /> : catProducts.map(p => (
                   <div key={p._id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 20px", borderBottom: "1px solid #f8fafc" }}>
                     <div style={{ width: 40, height: 40, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", border: "1px solid #f1f5f9" }}>
-                      {p.image ? <img src={getImageUrl(p.image)} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} /> : <span>📦</span>}
+                      {getImageUrlFrom(p.image)
+                        ? <img src={getImageUrlFrom(p.image)} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "contain", padding: 2 }} onError={e => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+                        : <span>📦</span>}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ color: "#1e293b", fontWeight: 600, fontSize: 13 }}>{p.name}</div>
