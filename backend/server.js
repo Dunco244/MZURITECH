@@ -49,6 +49,7 @@ const allowedOrigins = [
   'https://69c113c60e84741f2529f706--mzuritech.netlify.app',
   'https://69c120fb3c410539feb8f9f5--mzuritech.netlify.app',
   'https://69c12aea74f04800081c6ad2--mzuritech.netlify.app',
+  'https://mzuritech.pages.dev',
 ];
 const io = new Server(server, {
   cors: {
