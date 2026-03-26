@@ -122,6 +122,7 @@ export default function Header() {
   const [searchQuery, setSearchQuery]         = useState('');
   const [showCatDropdown, setShowCatDropdown] = useState(false);
   const [showSearchDrop, setShowSearchDrop]   = useState(false);
+  const searchFocusedRef = useRef(false);
   const [apiCategories, setApiCategories]     = useState<ApiCategory[]>([]);
   const [searchResults, setSearchResults]     = useState<Product[]>([]);
   const [searchLoading, setSearchLoading]     = useState(false);
@@ -176,6 +177,9 @@ export default function Header() {
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
+      // ── FIX 6: Never close dropdown while search input is focused ──
+      if (searchFocusedRef.current) return;
+
       setTimeout(() => {
         if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
           setShowCatDropdown(false);
@@ -502,7 +506,10 @@ export default function Header() {
                     </button>
                     <input ref={searchRef} type="search" className="search-field" placeholder="Search products..."
                       value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                      onFocus={() => setShowSearchDrop(true)} autoComplete="off" />
+                      onFocus={() => { searchFocusedRef.current = true; setShowSearchDrop(true); }}
+                      onBlur={() => { searchFocusedRef.current = false; }}
+                      onKeyDown={() => setShowSearchDrop(true)}
+                      autoComplete="off" />
                     {searchQuery && (
                       <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]); searchRef.current?.focus(); }}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 4px', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
@@ -665,7 +672,10 @@ export default function Header() {
                   <input ref={mobileSearchRef} type="search" className="mob-search-input"
                     placeholder="Search products..." value={searchQuery}
                     onChange={e => { setSearchQuery(e.target.value); setShowSearchDrop(true); }}
-                    autoComplete="off" onFocus={() => setShowSearchDrop(true)} />
+                    autoComplete="off"
+                    onFocus={() => { searchFocusedRef.current = true; setShowSearchDrop(true); }}
+                    onBlur={() => { searchFocusedRef.current = false; }}
+                    onKeyDown={() => setShowSearchDrop(true)} />
                   {searchQuery && (
                     <button type="button" onClick={() => { setSearchQuery(''); setSearchResults([]); mobileSearchRef.current?.focus(); }}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 6px', color: '#94a3b8', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
