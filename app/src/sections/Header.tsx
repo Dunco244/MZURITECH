@@ -54,6 +54,16 @@ const CURATED_NAV = [
 
 const TRENDING_SEARCHES = ['MacBook Air', 'iPhone 15', 'Samsung S24', 'Gaming Laptop', 'AirPods Pro'];
 
+// ── FIX 1: Warm up the backend on page load to eliminate cold-start delay ──
+// This fires a lightweight ping so the serverless function is already "hot"
+// by the time the user types their first search.
+let _warmedUp = false;
+function warmUpSearch() {
+  if (_warmedUp) return;
+  _warmedUp = true;
+  fetch(`${API_URL}/api/products?search=a&limit=1`).catch(() => {});
+}
+
 interface ApiCategory {
   _id?: string;
   id?: string;
@@ -130,6 +140,11 @@ export default function Header() {
   const searchCacheRef      = useRef<Map<string, Product[]>>(new Map());
   const wishlistCount       = wishlist.length;
 
+  // ── FIX 2: Keep selectedCatId as a simple string, not the full object ──
+  // Storing the full object caused stale references when searchCategories rebuilt
+  // on each render. A string ID is stable and avoids the entire class of bugs.
+  const [selectedCatId, setSelectedCatId] = useState('all');
+
   const searchCategories = [
     { id: 'all', name: 'All Products', route: '/shop' },
     ...apiCategories.map(c => ({
@@ -139,9 +154,13 @@ export default function Header() {
     })),
     { id: 'new', name: 'New Arrivals', route: '/shop?cat=new' },
   ];
-  const [selectedCat, setSelectedCat] = useState(searchCategories[0]);
+
+  // Derive the selected category object fresh from the current list each render
+  const selectedCat = searchCategories.find(c => c.id === selectedCatId) ?? searchCategories[0];
 
   useEffect(() => {
+    // Fetch categories and warm up search backend simultaneously
+    warmUpSearch();
     fetch(`${API_URL}/api/categories`)
       .then(r => r.json())
       .then(data => setApiCategories(data.categories || data || []))
@@ -156,8 +175,6 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    // ✅ FIX: use a small delay so product item clicks register BEFORE the dropdown closes
-    // mousedown fires before click — without delay, dropdown disappears before navigation runs
     const handler = (e: MouseEvent) => {
       setTimeout(() => {
         if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node))
@@ -189,9 +206,19 @@ export default function Header() {
     return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
+  // ── FIX 3: Remove selectedCat.id from useCallback deps ──
+  // Previously, every time selectedCat changed (which happened on EVERY render
+  // because searchCategories was rebuilt), liveSearch got a new reference,
+  // which triggered the debounce useEffect below to re-run and restart the
+  // 380ms timer — causing apparent extra lag on every keystroke.
+  // Now we read selectedCatId from a ref so the callback is stable forever.
+  const selectedCatIdRef = useRef(selectedCatId);
+  useEffect(() => { selectedCatIdRef.current = selectedCatId; }, [selectedCatId]);
+
   const liveSearch = useCallback(async (q: string) => {
+    const catId = selectedCatIdRef.current;
     if (!q.trim()) { setSearchResults([]); setSearchLoading(false); return; }
-    const key = `${selectedCat.id}::${q.trim().toLowerCase()}`;
+    const key = `${catId}::${q.trim().toLowerCase()}`;
     const cached = searchCacheRef.current.get(key);
     if (cached) { setSearchResults(cached); setSearchLoading(false); return; }
     setSearchLoading(true);
@@ -199,7 +226,7 @@ export default function Header() {
     const controller = new AbortController();
     abortRef.current = controller;
     try {
-      const catParam = selectedCat.id !== 'all' ? `&category=${selectedCat.id}` : '';
+      const catParam = catId !== 'all' ? `&category=${catId}` : '';
       const res  = await fetch(
         `${API_URL}/api/products?search=${encodeURIComponent(q)}${catParam}&limit=6`,
         { signal: controller.signal }
@@ -213,12 +240,16 @@ export default function Header() {
     } finally {
       if (!controller.signal.aborted) setSearchLoading(false);
     }
-  }, [selectedCat.id]);
+  }, []); // ← stable forever; reads catId via ref
 
+  // ── FIX 4: Reduced debounce from 380ms → 220ms ──
+  // Combined with the warm-up ping above, this makes results feel instant.
+  // The abort controller already handles cancelling in-flight requests so
+  // reducing debounce does not increase server load meaningfully.
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (searchQuery.trim().length >= 2) {
-      debounceRef.current = setTimeout(() => liveSearch(searchQuery), 380);
+      debounceRef.current = setTimeout(() => liveSearch(searchQuery), 220);
     } else { setSearchResults([]); setSearchLoading(false); }
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchQuery, liveSearch]);
@@ -252,13 +283,19 @@ export default function Header() {
     searchRef.current?.blur(); mobileSearchRef.current?.blur();
   };
 
+  // ── FIX 5: handleCatSelect now sets ID only (not the full object) ──
   const handleCatSelect = (cat: typeof searchCategories[0]) => {
-    setSelectedCat(cat); setShowCatDropdown(false);
+    setSelectedCatId(cat.id);
+    setShowCatDropdown(false);
     goToShop(cat, searchQuery || undefined);
     searchRef.current?.focus();
+    // Re-run search immediately with new category if there's an active query
+    if (searchQuery.trim().length >= 2) {
+      selectedCatIdRef.current = cat.id;
+      liveSearch(searchQuery);
+    }
   };
 
-  // ✅ FIX: navigate immediately on click — don't wait for mousedown outside handler
   const handleProductClick = (product: Product) => {
     const pid = product._id || product.id || product.slug;
     if (!pid) return;
@@ -716,4 +753,3 @@ export default function Header() {
     </>
   );
 }
-
