@@ -80,6 +80,12 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
   const [mpesaPhone, setMpesaPhone]       = useState('');
 
+  // ── Field-level errors ───────────────────────────────────────────────────────
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const setFieldError = (field: string, msg: string) =>
+    setFieldErrors(prev => ({ ...prev, [field]: msg }));
+  const clearFieldError = (field: string) =>
+    setFieldErrors(prev => { const n = { ...prev }; delete n[field]; return n; });
   // ✅ FIX: scroll to top on mount — ScrollArea retains scroll from previous page
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior });
@@ -141,15 +147,15 @@ export default function Checkout() {
   const validatePhone = (phone: string): string | null => {
     const v = normalizePhone(phone);
     if (!v) return 'Phone number is required';
-    if (!/^(?:\+254|0)7\d{8}$/.test(v))
-      return 'Phone must be 07XXXXXXXX or +2547XXXXXXXX';
+    if (!/^(?:\+254|0)\d{9}$/.test(v))
+      return 'Phone must be 07XXXXXXXXX or +254XXXXXXXXX';
     return null;
   };
   const validateAuthPhone = (phone: string): string | null => {
     const v = normalizePhone(phone);
     if (!v) return 'Phone number is required';
-    if (!/^(?:\+254|0)7\d{8}$/.test(v))
-      return 'Phone must be 07XXXXXXXX or +2547XXXXXXXX';
+    if (!/^(?:\+254|0)\d{9}$/.test(v))
+      return 'Phone must be 07XXXXXXXXX or +254XXXXXXXXX';
     return null;
   };
 
@@ -172,6 +178,7 @@ export default function Checkout() {
     setGuestEmailError('');
 
     if (!shippingAddress.fullName.trim()) { setError('Recipient full name is required'); return false; }
+    if (/\d/.test(shippingAddress.fullName)) { setError('Recipient name must not contain numbers'); return false; }
     if (!shippingAddress.street.trim())   { setError('Street address is required'); return false; }
     if (!shippingAddress.city.trim())     { setError('Town/City is required'); return false; }
     if (!shippingAddress.state.trim())    { setError('County is required'); return false; }
@@ -573,18 +580,49 @@ export default function Checkout() {
 
                   <div className="md:col-span-2">
                     <Label htmlFor="fullName">Full Name (Recipient) *</Label>
-                    <Input id="fullName" placeholder="e.g. Jane Wanjiku" value={shippingAddress.fullName}
-                      onChange={e => handleAddressChange('fullName', e.target.value)} />
-                    <p className="text-xs text-gray-500 mt-1">Name of the person receiving the order</p>
+                    <Input
+                      id="fullName"
+                      placeholder="e.g. Jane Wanjiku"
+                      value={shippingAddress.fullName}
+                      onChange={e => {
+                        handleAddressChange('fullName', e.target.value);
+                        if (/\d/.test(e.target.value)) setFieldError('fullName', 'Name must not contain numbers');
+                        else clearFieldError('fullName');
+                      }}
+                      onBlur={() => {
+                        if (!shippingAddress.fullName.trim()) setFieldError('fullName', 'Recipient full name is required');
+                        else if (/\d/.test(shippingAddress.fullName)) setFieldError('fullName', 'Name must not contain numbers');
+                        else clearFieldError('fullName');
+                      }}
+                      className={fieldErrors.fullName ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    />
+                    {fieldErrors.fullName
+                      ? <p className="text-xs text-red-500 mt-1">{fieldErrors.fullName}</p>
+                      : <p className="text-xs text-gray-500 mt-1">Name of the person receiving the order</p>}
                   </div>
 
                   <div className="md:col-span-2">
                     <Label htmlFor="phone" className="flex items-center gap-2">
                       <Phone className="w-4 h-4" /> Phone Number *
                     </Label>
-                    <Input id="phone" placeholder="07xx xxx xxx" value={shippingAddress.phone}
-                      onChange={e => handleAddressChange('phone', e.target.value)} />
-                    <p className="text-xs text-gray-500 mt-1">Kenyan format: 07XXXXXXXX or +2547XXXXXXXX</p>
+                    <Input
+                      id="phone"
+                      placeholder="07XX XXX XXX or +254 7XX XXX XXX"
+                      value={shippingAddress.phone}
+                      onChange={e => {
+                        handleAddressChange('phone', e.target.value);
+                        clearFieldError('phone');
+                      }}
+                      onBlur={() => {
+                        const err = validatePhone(shippingAddress.phone);
+                        if (err) setFieldError('phone', err);
+                        else clearFieldError('phone');
+                      }}
+                      className={fieldErrors.phone ? 'border-red-500 focus-visible:ring-red-500' : ''}
+                    />
+                    {fieldErrors.phone
+                      ? <p className="text-xs text-red-500 mt-1">{fieldErrors.phone}</p>
+                      : <p className="text-xs text-gray-500 mt-1">Kenyan format: 07XXXXXXXXX or +254XXXXXXXXX</p>}
                   </div>
 
                   <div className="md:col-span-2">
