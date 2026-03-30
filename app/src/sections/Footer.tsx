@@ -1,5 +1,4 @@
 import {
-  Facebook, Twitter, Instagram, Youtube,
   MapPin, Phone, Mail, Store,
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -26,12 +25,7 @@ const footerLinks = {
   ],
 };
 
-const socialLinks = [
-  { icon: Facebook,  href: 'https://facebook.com',  label: 'Facebook' },
-  { icon: Twitter,   href: 'https://twitter.com',   label: 'Twitter' },
-  { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
-  { icon: Youtube,   href: 'https://youtube.com',   label: 'YouTube' },
-];
+
 
 export default function Footer() {
   const { user } = useAuth();
@@ -166,22 +160,10 @@ export default function Footer() {
               <p className="text-sm text-white/40">© 2026 MzuriTech. All rights reserved.</p>
 
               <div className="flex items-center gap-2">
-                {socialLinks.map(social => (
-                  <a key={social.label} href={social.href} target="_blank" rel="noopener noreferrer"
-                    aria-label={social.label}
-                    className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center hover:bg-primary/80 transition-colors">
-                    <social.icon className="w-4 h-4" />
-                  </a>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
                 <span className="text-xs text-white/40">We accept:</span>
-                {['M-Pesa', 'Visa', 'MC'].map(method => (
-                  <div key={method} className="px-2 h-6 bg-white/10 rounded text-[10px] font-medium flex items-center">
-                    {method}
-                  </div>
-                ))}
+                <div className="px-2 h-6 bg-white/10 rounded text-[10px] font-medium flex items-center">
+                  M-Pesa
+                </div>
               </div>
 
             </div>
