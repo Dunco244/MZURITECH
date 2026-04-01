@@ -341,12 +341,36 @@ function handleDownload(order: Order) {
 export default function OrderHistory() {
   const { token, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const [orders, setOrders]       = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError]         = useState('');
-  const [expanded, setExpanded]   = useState<Record<string, boolean>>({});
+  const [orders, setOrders]             = useState<Order[]>([]);
+  const [isLoading, setIsLoading]       = useState(true);
+  const [error, setError]               = useState('');
+  const [expanded, setExpanded]         = useState<Record<string, boolean>>({});
+  const [cancelling, setCancelling]     = useState<string | null>(null);
+  const [cancelError, setCancelError]   = useState<Record<string, string>>({});
 
   const toggle = (id: string) => setExpanded(e => ({ ...e, [id]: !e[id] }));
+
+  const handleCancel = async (orderId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    setCancelling(orderId);
+    setCancelError(prev => ({ ...prev, [orderId]: '' }));
+    try {
+      const res  = await fetch(`${API_URL}/api/orders/${orderId}/cancel`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: 'cancelled' } : o));
+      } else {
+        setCancelError(prev => ({ ...prev, [orderId]: data.message || 'Failed to cancel order' }));
+      }
+    } catch {
+      setCancelError(prev => ({ ...prev, [orderId]: 'Could not connect to server' }));
+    } finally {
+      setCancelling(null);
+    }
+  };
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -507,6 +531,19 @@ export default function OrderHistory() {
                       <button className="action-btn" onClick={() => handleDownload(order)}>
                         <Download size={13} /> Receipt
                       </button>
+                      {order.status === 'pending' && (
+                        <button
+                          className="action-btn"
+                          onClick={() => handleCancel(order._id)}
+                          disabled={cancelling === order._id}
+                          style={{ borderColor:'#fecaca', color:'#dc2626', background: cancelling === order._id ? '#fef2f2' : 'white' }}
+                        >
+                          {cancelling === order._id
+                            ? <><div style={{ width:12, height:12, border:'2px solid #fca5a5', borderTopColor:'#dc2626', borderRadius:'50%', animation:'spin .7s linear infinite' }} /> Cancelling…</>
+                            : <><XCircle size={13} /> Cancel Order</>
+                          }
+                        </button>
+                      )}
                       <button className="expand-btn" onClick={() => toggle(order._id)}>
                         {open ? <><ChevronUp size={15} /> Hide</> : <><ChevronDown size={15} /> Details</>}
                       </button>
@@ -516,6 +553,11 @@ export default function OrderHistory() {
                   {/* ── Expanded Details ── */}
                   {open && (
                     <div style={{ padding:'20px 24px' }}>
+                      {cancelError[order._id] && (
+                        <div style={{ background:'#fef2f2', border:'1.5px solid #fecaca', color:'#dc2626', borderRadius:10, padding:'10px 14px', fontSize:13, marginBottom:16 }}>
+                          {cancelError[order._id]}
+                        </div>
+                      )}
                       <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20 }}>
 
                         {/* Items — ✅ FIXED: uses ProductImage component */}

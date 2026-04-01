@@ -11,6 +11,7 @@ const fs = require('fs');
 const { body, validationResult } = require('express-validator');
 const Product = require('../models/Product');
 const Review = require('../models/Review');
+const Order = require('../models/Order');
 const User = require('../models/User');
 const { protect, authorize } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
@@ -319,15 +320,30 @@ router.post('/:id/reviews', [
     return res.status(404).json({ success: false, message: 'Product not found' });
   }
 
+  // ── Verified purchase check ───────────────────────────────────────────────
+  const purchasedOrder = await Order.findOne({
+    user:   req.user.id,
+    status: 'delivered',
+    'orderItems.product': req.params.id,
+  });
+
+  if (!purchasedOrder) {
+    return res.status(403).json({
+      success: false,
+      message: 'You can only review products you have purchased and received',
+    });
+  }
+
   const existingReview = await Review.findOne({ user: req.user.id, product: req.params.id });
   if (existingReview) {
     return res.status(400).json({ success: false, message: 'You have already reviewed this product' });
   }
 
   const review = await Review.create({
-    user: req.user.id,
-    product: req.params.id,
-    rating, title, comment
+    user:       req.user.id,
+    product:    req.params.id,
+    rating, title, comment,
+    isVerified: true, // mark as verified purchase
   });
 
   res.status(201).json({ success: true, review });
