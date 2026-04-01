@@ -391,9 +391,11 @@ router.put('/:id/status', protect, authorize('admin'), async (req, res) => {
   }
 });
 
+const CANCEL_WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+
 /**
  * @route   PUT /api/orders/:id/cancel
- * @desc    Customer cancels a pending order
+ * @desc    Customer cancels a pending order (within 30 min of placing)
  * @access  Private
  */
 router.put('/:id/cancel', protect, async (req, res) => {
@@ -408,6 +410,15 @@ router.put('/:id/cancel', protect, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Only pending orders can be cancelled' });
     }
 
+    // ── 30-minute cancellation window ─────────────────────────────────────
+    const elapsed = Date.now() - new Date(order.createdAt).getTime();
+    if (elapsed > CANCEL_WINDOW_MS) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cancellation window has expired. Orders can only be cancelled within 30 minutes of placing.',
+      });
+    }
+
     for (const item of order.orderItems) {
       const product = await Product.findById(item.product);
       if (product && product.stockQuantity >= 0) {
@@ -420,6 +431,30 @@ router.put('/:id/cancel', protect, async (req, res) => {
 
     order.status = 'cancelled';
     await order.save();
+
+    // ── Notify admin ──────────────────────────────────────────────────────
+    try {
+      await Notification.create({
+        title:   'Order Cancelled',
+        message: `Order ${order.orderNumber || order._id.toString().slice(-8)} was cancelled by the customer.`,
+        type:    'order_cancelled',
+        relatedId:    order._id,
+        relatedModel: 'Order',
+        metadata: { totalPrice: order.totalPrice, cancelledBy: 'customer' },
+      });
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('order:updated', order);
+        io.emit('notification:new', {
+          title:     'Order Cancelled',
+          message:   `Order ${order.orderNumber || order._id.toString().slice(-8)} was cancelled by the customer.`,
+          type:      'order_cancelled',
+          createdAt: new Date().toISOString(),
+        });
+      }
+    } catch (notifErr) {
+      console.error('Cancel notification error (non-fatal):', notifErr.message);
+    }
 
     res.json({ success: true, order });
   } catch (error) {
@@ -454,6 +489,15 @@ router.put('/guest-cancel/:orderNumber', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Only pending orders can be cancelled' });
     }
 
+    // ── 30-minute cancellation window ─────────────────────────────────────
+    const elapsed = Date.now() - new Date(order.createdAt).getTime();
+    if (elapsed > CANCEL_WINDOW_MS) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cancellation window has expired. Orders can only be cancelled within 30 minutes of placing.',
+      });
+    }
+
     // Restore stock
     for (const item of order.orderItems) {
       await Product.findByIdAndUpdate(item.product, {
@@ -464,6 +508,30 @@ router.put('/guest-cancel/:orderNumber', async (req, res) => {
 
     order.status = 'cancelled';
     await order.save();
+
+    // ── Notify admin ──────────────────────────────────────────────────────
+    try {
+      await Notification.create({
+        title:   'Order Cancelled',
+        message: `Order ${order.orderNumber || order._id.toString().slice(-8)} was cancelled by the customer (guest).`,
+        type:    'order_cancelled',
+        relatedId:    order._id,
+        relatedModel: 'Order',
+        metadata: { totalPrice: order.totalPrice, cancelledBy: 'guest' },
+      });
+      const io = req.app.get('io');
+      if (io) {
+        io.emit('order:updated', order);
+        io.emit('notification:new', {
+          title:     'Order Cancelled',
+          message:   `Order ${order.orderNumber || order._id.toString().slice(-8)} was cancelled by the customer (guest).`,
+          type:      'order_cancelled',
+          createdAt: new Date().toISOString(),
+        });
+      }
+    } catch (notifErr) {
+      console.error('Guest cancel notification error (non-fatal):', notifErr.message);
+    }
 
     res.json({ success: true, order });
   } catch (error) {

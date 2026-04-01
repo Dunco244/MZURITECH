@@ -193,6 +193,23 @@ export default function GuestOrderTracking() {
   const [searched, setSearched]       = useState(false);
   const [cancelling, setCancelling]   = useState(false);
   const [cancelError, setCancelError] = useState('');
+  const [, forceUpdate]               = useState(0);
+
+  useEffect(() => {
+    const t = setInterval(() => forceUpdate(n => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const CANCEL_WINDOW_MS = 30 * 60 * 1000;
+  const getCancelTimeLeft = (createdAt?: string): { canCancel: boolean; label: string } => {
+    if (!createdAt) return { canCancel: false, label: '' };
+    const elapsed   = Date.now() - new Date(createdAt).getTime();
+    const remaining = CANCEL_WINDOW_MS - elapsed;
+    if (remaining <= 0) return { canCancel: false, label: 'Window expired' };
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    return { canCancel: true, label: `${mins}m ${secs}s left` };
+  };
 
   useEffect(() => {
     const urlOrder = searchParams.get('order');
@@ -354,18 +371,22 @@ export default function GuestOrderTracking() {
                         {cancelError}
                       </p>
                     )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCancel}
-                      disabled={cancelling}
-                      className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
-                    >
-                      {cancelling
-                        ? <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Cancelling…</>
-                        : <><XCircle className="w-3.5 h-3.5 mr-2" /> Cancel Order</>
-                      }
-                    </Button>
+                    {getCancelTimeLeft(order.createdAt).canCancel ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCancel}
+                        disabled={cancelling}
+                        className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+                      >
+                        {cancelling
+                          ? <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Cancelling…</>
+                          : <><XCircle className="w-3.5 h-3.5 mr-2" /> Cancel Order <span className="ml-1 text-xs opacity-70">({getCancelTimeLeft(order.createdAt).label})</span></>
+                        }
+                      </Button>
+                    ) : (
+                      <p className="text-xs text-gray-400">Cancellation window has expired (30 min limit).</p>
+                    )}
                   </div>
                 )}
               </CardContent>

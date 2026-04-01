@@ -305,6 +305,24 @@ export default function Profile() {
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
   const [cancelling, setCancelling]     = useState<string | null>(null);
   const [cancelError, setCancelError]   = useState<Record<string, string>>({});
+  const [, forceUpdate]                 = useState(0);
+
+  // Re-render every 30s to update countdown timers
+  useEffect(() => {
+    const t = setInterval(() => forceUpdate(n => n + 1), 30000);
+    return () => clearInterval(t);
+  }, []);
+
+  const CANCEL_WINDOW_MS = 30 * 60 * 1000;
+  const getCancelTimeLeft = (createdAt?: string): { canCancel: boolean; label: string } => {
+    if (!createdAt) return { canCancel: false, label: '' };
+    const elapsed  = Date.now() - new Date(createdAt).getTime();
+    const remaining = CANCEL_WINDOW_MS - elapsed;
+    if (remaining <= 0) return { canCancel: false, label: 'Window expired' };
+    const mins = Math.floor(remaining / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
+    return { canCancel: true, label: `${mins}m ${secs}s left` };
+  };
 
   const [formData, setFormData] = useState({
     name:    user?.name              || '',
@@ -816,12 +834,12 @@ export default function Profile() {
                           <button
                             className="action-btn"
                             onClick={() => handleCancelOrder(order._id)}
-                            disabled={cancelling === order._id}
-                            style={{ borderColor:'#fecaca', color:'#dc2626', background: cancelling === order._id ? '#fef2f2' : 'white' }}
+                            disabled={cancelling === order._id || !getCancelTimeLeft(order.createdAt).canCancel}
+                            style={{ borderColor:'#fecaca', color:'#dc2626', background: cancelling === order._id ? '#fef2f2' : 'white', opacity: !getCancelTimeLeft(order.createdAt).canCancel ? 0.5 : 1 }}
                           >
                             {cancelling === order._id
                               ? <><div style={{ width:11, height:11, border:'2px solid #fca5a5', borderTopColor:'#dc2626', borderRadius:'50%', animation:'spin .7s linear infinite' }} /> Cancelling…</>
-                              : <><XCircle size={12} /> Cancel</>
+                              : <><XCircle size={12} /> Cancel <span style={{ fontSize:10, color:'#ef4444', marginLeft:2 }}>({getCancelTimeLeft(order.createdAt).label})</span></>
                             }
                           </button>
                         )}
