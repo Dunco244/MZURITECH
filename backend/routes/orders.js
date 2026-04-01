@@ -428,4 +428,48 @@ router.put('/:id/cancel', protect, async (req, res) => {
   }
 });
 
+/**
+ * @route   PUT /api/orders/guest-cancel/:orderNumber
+ * @desc    Guest cancels a pending order — verified by order number + email
+ * @access  Public
+ */
+router.put('/guest-cancel/:orderNumber', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
+    }
+
+    const order = await Order.findOne({ orderNumber: req.params.orderNumber });
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found' });
+    }
+
+    // Verify email matches
+    if (!order.isGuestOrder || order.guestEmail !== email.trim().toLowerCase()) {
+      return res.status(403).json({ success: false, message: 'Email does not match this order' });
+    }
+
+    if (order.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Only pending orders can be cancelled' });
+    }
+
+    // Restore stock
+    for (const item of order.orderItems) {
+      await Product.findByIdAndUpdate(item.product, {
+        $inc: { stockQuantity: item.quantity },
+        inStock: true,
+      });
+    }
+
+    order.status = 'cancelled';
+    await order.save();
+
+    res.json({ success: true, order });
+  } catch (error) {
+    console.error('Guest cancel order error:', error);
+    res.status(500).json({ success: false, message: 'Error cancelling order' });
+  }
+});
+
 module.exports = router;

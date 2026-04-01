@@ -16,6 +16,7 @@ interface StoreContextType {
   isSyncing: boolean;
   wishlist: string[];
   toggleWishlist: (productId: string) => void;
+  wishlistLoading: boolean;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -40,6 +41,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [wishlist, setWishlist] = useState<string[]>(() => getStoredWishlist());
+  const [wishlistLoading, setWishlistLoading] = useState(false);
 
   // Persist cart to localStorage whenever it changes
   useEffect(() => {
@@ -146,12 +148,58 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleWishlist = useCallback((productId: string) => {
-    setWishlist((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    );
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+
+    setWishlist(prev => {
+      const isInWishlist = prev.includes(productId);
+      const next = isInWishlist
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId];
+
+      // Sync to DB if logged in (fire-and-forget)
+      if (token) {
+        if (isInWishlist) {
+          fetch(`${API_URL}/api/wishlist/${productId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => {});
+        } else {
+          fetch(`${API_URL}/api/wishlist`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ productId }),
+          }).catch(() => {});
+        }
+      }
+
+      return next;
+    });
   }, []);
+
+  // ── Sync wishlist from DB on login ──────────────────────────────────────────
+  const syncWishlistFromDB = useCallback(async (token: string) => {
+    setWishlistLoading(true);
+    try {
+      const res  = await fetch(`${API_URL}/api/wishlist`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        const ids = (data.wishlist || [])
+          .map((item: any) => item.product?._id || item.product)
+          .filter(Boolean) as string[];
+        setWishlist(ids);
+        localStorage.setItem('wishlist', JSON.stringify(ids));
+      }
+    } catch { /* silent */ }
+    finally { setWishlistLoading(false); }
+  }, []);
+
+  // Load wishlist from DB on mount if token exists
+  useEffect(() => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    if (token) syncWishlistFromDB(token);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const cartTotal = cart.reduce(
     (sum, item) => sum + ((item?.product?.price || 0) * (item?.quantity || 0)),
@@ -174,6 +222,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         isSyncing,
         wishlist,
         toggleWishlist,
+        wishlistLoading,
       }}
     >
       {children}

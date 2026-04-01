@@ -191,6 +191,8 @@ export default function GuestOrderTracking() {
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
   const [searched, setSearched]       = useState(false);
+  const [cancelling, setCancelling]   = useState(false);
+  const [cancelError, setCancelError] = useState('');
 
   useEffect(() => {
     const urlOrder = searchParams.get('order');
@@ -229,6 +231,29 @@ export default function GuestOrderTracking() {
   const paymentLabel: Record<string, string> = {
     cod:    'Cash on Delivery',
     mpesa:  'M-Pesa',
+  };
+
+  const handleCancel = async () => {
+    if (!order || !window.confirm('Are you sure you want to cancel this order?')) return;
+    setCancelling(true);
+    setCancelError('');
+    try {
+      const res  = await fetch(`${API_URL}/api/orders/guest-cancel/${order.orderNumber}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim().toLowerCase() }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOrder(prev => prev ? { ...prev, status: 'cancelled' } : prev);
+      } else {
+        setCancelError(data.message || 'Failed to cancel order');
+      }
+    } catch {
+      setCancelError('Could not connect to server');
+    } finally {
+      setCancelling(false);
+    }
   };
 
   return (
@@ -320,6 +345,29 @@ export default function GuestOrderTracking() {
               </CardHeader>
               <CardContent>
                 <OrderProgress status={order.status} />
+
+                {/* Cancel button — only for pending guest orders */}
+                {order.status === 'pending' && order.isGuestOrder && (
+                  <div className="mt-4">
+                    {cancelError && (
+                      <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">
+                        {cancelError}
+                      </p>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancel}
+                      disabled={cancelling}
+                      className="border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+                    >
+                      {cancelling
+                        ? <><Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> Cancelling…</>
+                        : <><XCircle className="w-3.5 h-3.5 mr-2" /> Cancel Order</>
+                      }
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

@@ -303,6 +303,8 @@ export default function Profile() {
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [ordersError, setOrdersError]   = useState('');
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
+  const [cancelling, setCancelling]     = useState<string | null>(null);
+  const [cancelError, setCancelError]   = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     name:    user?.name              || '',
@@ -358,6 +360,28 @@ export default function Profile() {
 
   const toggleOrder = (id: string) =>
     setExpandedOrders(e => ({ ...e, [id]: !e[id] }));
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    setCancelling(orderId);
+    setCancelError(prev => ({ ...prev, [orderId]: '' }));
+    try {
+      const res  = await fetch(`${API_URL}/api/orders/${orderId}/cancel`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setOrders(prev => prev.map(o => o._id === orderId ? { ...o, status: 'cancelled' } : o));
+      } else {
+        setCancelError(prev => ({ ...prev, [orderId]: data.message || 'Failed to cancel order' }));
+      }
+    } catch {
+      setCancelError(prev => ({ ...prev, [orderId]: 'Could not connect to server' }));
+    } finally {
+      setCancelling(null);
+    }
+  };
 
   // ── Profile handlers ───────────────────────────────────────────────────
   useEffect(() => {
@@ -788,6 +812,19 @@ export default function Profile() {
                         <button className="action-btn" onClick={() => handleDownload(order)}>
                           <Download size={12} /> Receipt
                         </button>
+                        {order.status === 'pending' && (
+                          <button
+                            className="action-btn"
+                            onClick={() => handleCancelOrder(order._id)}
+                            disabled={cancelling === order._id}
+                            style={{ borderColor:'#fecaca', color:'#dc2626', background: cancelling === order._id ? '#fef2f2' : 'white' }}
+                          >
+                            {cancelling === order._id
+                              ? <><div style={{ width:11, height:11, border:'2px solid #fca5a5', borderTopColor:'#dc2626', borderRadius:'50%', animation:'spin .7s linear infinite' }} /> Cancelling…</>
+                              : <><XCircle size={12} /> Cancel</>
+                            }
+                          </button>
+                        )}
                         <button className="expand-btn" onClick={() => toggleOrder(order._id)}>
                           {open ? <><ChevronUp size={14} /> Hide</> : <><ChevronDown size={14} /> Details</>}
                         </button>
@@ -797,6 +834,11 @@ export default function Profile() {
                     {/* Expanded details */}
                     {open && (
                       <div style={{ padding:'16px 20px' }}>
+                        {cancelError[order._id] && (
+                          <div style={{ background:'#fef2f2', border:'1.5px solid #fecaca', color:'#dc2626', borderRadius:10, padding:'10px 14px', fontSize:13, marginBottom:14 }}>
+                            {cancelError[order._id]}
+                          </div>
+                        )}
                         <div className="profile-grid-2" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
 
                           {/* Items */}
