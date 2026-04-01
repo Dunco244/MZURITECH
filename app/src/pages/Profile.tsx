@@ -402,8 +402,14 @@ export default function Profile() {
   };
 
   // ── Profile handlers ───────────────────────────────────────────────────
+  // Reset all profile state when the logged-in user changes (e.g. switching accounts)
   useEffect(() => {
     if (!user) return;
+    setActiveTab('profile');
+    setOrders([]);
+    setExpandedOrders({});
+    setCancelError({});
+    setMessage({ type: '', text: '' });
     setFormData({
       name:    user.name              || '',
       phone:   user.phone             || '',

@@ -260,6 +260,10 @@ function QuickViewModal({ product, onClose }: { product: Product; onClose: () =>
               </Button>
               <Button variant="outline" onClick={onClose}>Close</Button>
             </div>
+            <a href={`/product/${product.id}`} onClick={onClose}
+              className="block text-center text-sm text-primary hover:underline pt-1">
+              View Full Details &amp; Reviews →
+            </a>
           </div>
         </div>
       </div>
