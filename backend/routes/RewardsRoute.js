@@ -2,6 +2,7 @@
 const express = require('express');
 const router  = express.Router();
 const Rewards = require('../models/Rewards');
+const Coupon  = require('../models/Coupon');
 const { protect } = require('../middleware/auth'); // your existing auth middleware
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -107,7 +108,12 @@ router.post('/redeem', protect, async (req, res) => {
 
     await rewards.save();
 
-    // TODO: optionally save coupon to a Coupons collection so it can be validated at checkout
+    // Save coupon to DB so it can be validated at checkout
+    await Coupon.create({
+      code:     couponCode,
+      user:     req.user._id,
+      kesValue,
+    });
 
     res.json({
       success:     true,
@@ -117,6 +123,38 @@ router.post('/redeem', protect, async (req, res) => {
     });
   } catch (err) {
     console.error('POST /rewards/redeem error:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// ── POST /api/rewards/coupon/validate ─────────────────────────────────────
+// Body: { couponCode }
+// Validates a coupon belongs to the current user and is unused
+router.post('/coupon/validate', protect, async (req, res) => {
+  try {
+    const { couponCode } = req.body;
+    if (!couponCode) {
+      return res.status(400).json({ success: false, message: 'Coupon code is required' });
+    }
+
+    const coupon = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
+
+    if (!coupon) {
+      return res.status(404).json({ success: false, message: 'Invalid coupon code' });
+    }
+    if (coupon.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ success: false, message: 'This coupon does not belong to your account' });
+    }
+    if (coupon.isUsed) {
+      return res.status(400).json({ success: false, message: 'This coupon has already been used' });
+    }
+    if (coupon.expiresAt && new Date() > coupon.expiresAt) {
+      return res.status(400).json({ success: false, message: 'This coupon has expired' });
+    }
+
+    res.json({ success: true, kesValue: coupon.kesValue, couponCode: coupon.code });
+  } catch (err) {
+    console.error('POST /rewards/coupon/validate error:', err);
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });

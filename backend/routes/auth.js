@@ -8,6 +8,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Vendor = require('../models/Vendor');
 const Notification = require('../models/Notification');
 const { protect } = require('../middleware/auth');
 const { sendWelcomeEmail, sendPasswordReset } = require('../services/emailService');
@@ -95,6 +96,18 @@ router.post('/register', [
     }
 
     const user = await User.create(userData);
+
+    // ── Create a Vendor record in the vendors collection ──────────────────
+    if (isVendor) {
+      await Vendor.create({
+        user:                user._id,
+        businessName:        userData.businessName,
+        businessDescription: userData.businessDescription,
+        businessPhone:       userData.businessPhone,
+        isApproved:          false,
+      });
+    }
+
     sendWelcomeEmail(user);
 
     if (isVendor) {

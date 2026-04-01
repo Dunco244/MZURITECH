@@ -10,10 +10,11 @@ const Product = require('../models/Product');
 const Category = require('../models/Category');
 const Order = require('../models/Order');
 const User = require('../models/User');
+const Vendor = require('../models/Vendor');
 const Delivery = require('../models/Delivery');
 const Notification = require('../models/Notification');
 const { protect, authorize } = require('../middleware/auth');
-const { awardOrderPoints } = require('../services/rewardsService'); // ✅ ADDED
+const { awardOrderPoints } = require('../services/rewardsService');
 
 // Validation middleware
 const validate = (req, res, next) => {
@@ -351,6 +352,11 @@ router.put('/users/:id', async (req, res) => {
         user.role     = 'vendor';
         user.isVendor = true;
       }
+      // Sync approval to Vendor doc
+      await Vendor.findOneAndUpdate(
+        { user: user._id },
+        { isApproved, ...(isApproved ? { approvedAt: new Date() } : {}) }
+      );
     }
 
     await user.save();
@@ -369,12 +375,16 @@ router.get('/vendors', async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const skip  = (page - 1) * limit;
 
-    const filter = { role: 'vendor' };
+    const filter = {};
     if (req.query.status === 'pending')  filter.isApproved = false;
     if (req.query.status === 'approved') filter.isApproved = true;
 
-    const vendors = await User.find(filter).select('-password').sort({ createdAt: -1 }).skip(skip).limit(limit);
-    const total   = await User.countDocuments(filter);
+    const vendors = await Vendor.find(filter)
+      .populate('user', '-password')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+    const total = await Vendor.countDocuments(filter);
 
     res.json({
       success: true, vendors,
@@ -394,6 +404,12 @@ router.put('/vendors/:id/approve', async (req, res) => {
 
     vendor.isApproved = isApproved;
     await vendor.save();
+
+    // Sync approval to Vendor doc
+    await Vendor.findOneAndUpdate(
+      { user: vendor._id },
+      { isApproved, ...(isApproved ? { approvedAt: new Date() } : {}) }
+    );
 
     res.json({
       success:  true,

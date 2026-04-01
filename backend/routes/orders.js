@@ -13,6 +13,7 @@ const { protect, authorize } = require('../middleware/auth');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Notification = require('../models/Notification');
+const Coupon = require('../models/Coupon');
 const { sendOrderConfirmation, sendAdminOrderAlert } = require('../services/emailService');
 const { awardOrderPoints } = require('../services/rewardsService');
 
@@ -67,7 +68,7 @@ router.post('/', optionalAuth, [
   body('guestEmail').optional().isEmail().withMessage('Invalid guest email address'),
 ], validate, async (req, res) => {
   try {
-    const { orderItems, shippingAddress, paymentMethod, notes, isGuestOrder, guestEmail } = req.body;
+    const { orderItems, shippingAddress, paymentMethod, notes, isGuestOrder, guestEmail, couponCode } = req.body;
 
     // Require email for guest orders
     if (!req.user && !guestEmail) {
@@ -105,15 +106,29 @@ router.post('/', optionalAuth, [
       });
     }
 
+    // ── Coupon / discount ─────────────────────────────────────────────────
+    let discountAmount    = 0;
+    let appliedCouponCode = null;
+    let couponDoc         = null;
+
+    if (couponCode && req.user) {
+      couponDoc = await Coupon.findOne({ code: couponCode.toUpperCase().trim() });
+      if (couponDoc && !couponDoc.isUsed
+          && couponDoc.user.toString() === req.user._id.toString()
+          && (!couponDoc.expiresAt || new Date() <= couponDoc.expiresAt)) {
+        discountAmount    = couponDoc.kesValue;
+        appliedCouponCode = couponDoc.code;
+      }
+    }
+
     // ── Totals ────────────────────────────────────────────────────────────
     const shippingPrice = itemsPrice >= 50000 ? 0 : 350;
     const taxPrice      = 0;
-    const totalPrice    = itemsPrice + shippingPrice;
+    const totalPrice    = Math.max(0, itemsPrice + shippingPrice - discountAmount);
 
     const order = await Order.create({
       user:         req.user ? req.user.id : null,
       isGuestOrder: !req.user,
-      // Store guest email so we can send confirmation & allow tracking
       guestEmail:   req.user ? null : guestEmail.trim().toLowerCase(),
       orderItems:   orderItemsWithPrice,
       shippingAddress,
@@ -121,10 +136,20 @@ router.post('/', optionalAuth, [
       itemsPrice,
       taxPrice,
       shippingPrice,
+      discountAmount,
+      appliedCouponCode,
       totalPrice,
       notes,
       status: 'pending'
     });
+
+    // Mark coupon as used
+    if (couponDoc) {
+      couponDoc.isUsed     = true;
+      couponDoc.usedAt     = new Date();
+      couponDoc.usedInOrder = order._id;
+      await couponDoc.save();
+    }
 
     // ── Send order confirmation email (non-blocking) ──────────────────────
     const emailRecipient = req.user

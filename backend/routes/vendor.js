@@ -8,6 +8,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Vendor = require('../models/Vendor');
 const Order = require('../models/Order');
 const { protect } = require('../middleware/auth');
 
@@ -33,6 +34,19 @@ const isVendor = async (req, res, next) => {
     });
   }
   req.vendorUser = user;
+
+  // Attach the Vendor document (create if missing for legacy accounts)
+  let vendor = await Vendor.findOne({ user: req.user.id });
+  if (!vendor) {
+    vendor = await Vendor.create({
+      user:                user._id,
+      businessName:        user.businessName || user.name + "'s Store",
+      businessDescription: user.businessDescription || '',
+      businessPhone:       user.businessPhone || user.phone,
+      isApproved:          user.isApproved || false,
+    });
+  }
+  req.vendor = vendor;
   next();
 };
 
@@ -77,7 +91,14 @@ router.get('/dashboard', protect, isVendor, async (req, res) => {
         pendingOrders: orders.filter(o => o.status === 'pending').length
       },
       recentOrders,
-      products: products.slice(0, 10)
+      products: products.slice(0, 10),
+      vendor: {
+        businessName:        req.vendor.businessName,
+        businessDescription: req.vendor.businessDescription,
+        businessPhone:       req.vendor.businessPhone,
+        isApproved:          req.vendor.isApproved,
+        createdAt:           req.vendor.createdAt,
+      }
     });
   } catch (error) {
     console.error('Vendor dashboard error:', error);
@@ -144,9 +165,11 @@ router.post('/products', [
       vendorName: req.vendorUser.businessName || req.vendorUser.name
     });
     
-    // Update vendor's product count
-    await User.findByIdAndUpdate(req.user.id, {
-      $inc: { totalProducts: 1 }
+    // Update vendor's product count on both User and Vendor docs
+    await User.findByIdAndUpdate(req.user.id, { $inc: { totalProducts: 1 } });
+    await Vendor.findByIdAndUpdate(req.vendor._id, {
+      $inc: { totalProducts: 1 },
+      $push: { products: product._id },
     });
     
     res.status(201).json({
@@ -237,10 +260,12 @@ router.delete('/products/:id', protect, isVendor, async (req, res) => {
     }
     
     await Product.findByIdAndDelete(req.params.id);
-    
-    // Update vendor's product count
-    await User.findByIdAndUpdate(req.user.id, {
-      $inc: { totalProducts: -1 }
+
+    // Update vendor's product count on both User and Vendor docs
+    await User.findByIdAndUpdate(req.user.id, { $inc: { totalProducts: -1 } });
+    await Vendor.findByIdAndUpdate(req.vendor._id, {
+      $inc: { totalProducts: -1 },
+      $pull: { products: product._id },
     });
     
     res.json({
@@ -314,26 +339,33 @@ router.put('/profile', [
 ], validate, async (req, res) => {
   try {
     const { businessName, businessDescription, businessPhone, businessAddress } = req.body;
-    
+
     const user = await User.findById(req.user.id);
-    
-    if (businessName) user.businessName = businessName;
+    if (!user || !user.isVendor) {
+      return res.status(403).json({ success: false, message: 'Vendor account required' });
+    }
+
+    // Update User doc (keep in sync for auth/profile)
+    if (businessName)        user.businessName        = businessName;
     if (businessDescription) user.businessDescription = businessDescription;
-    if (businessPhone) user.businessPhone = businessPhone;
-    if (businessAddress) user.businessAddress = { ...user.businessAddress, ...businessAddress };
-    
+    if (businessPhone)       user.businessPhone       = businessPhone;
+    if (businessAddress)     user.businessAddress     = { ...user.businessAddress, ...businessAddress };
     await user.save();
-    
-    res.json({
-      success: true,
-      user: user.getPublicProfile()
-    });
+
+    // Update Vendor doc (primary vendor record)
+    const vendor = await Vendor.findOne({ user: req.user.id });
+    if (vendor) {
+      if (businessName)        vendor.businessName        = businessName;
+      if (businessDescription) vendor.businessDescription = businessDescription;
+      if (businessPhone)       vendor.businessPhone       = businessPhone;
+      if (businessAddress)     vendor.businessAddress     = { ...vendor.businessAddress, ...businessAddress };
+      await vendor.save();
+    }
+
+    res.json({ success: true, user: user.getPublicProfile(), vendor });
   } catch (error) {
     console.error('Update vendor profile error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Server error'
-    });
+    res.status(500).json({ success: false, message: 'Server error' });
   }
 });
 

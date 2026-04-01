@@ -53,6 +53,13 @@ export default function Checkout() {
   const [orderNumber, setOrderNumber]   = useState('');
   const [error, setError]               = useState('');
 
+  // ── Coupon / discount state ──────────────────────────────────────────────────
+  const [couponInput, setCouponInput]       = useState('');
+  const [appliedCoupon, setAppliedCoupon]   = useState<{ code: string; kesValue: number } | null>(null);
+  const [couponLoading, setCouponLoading]   = useState(false);
+  const [couponError, setCouponError]       = useState('');
+  const [couponSuccess, setCouponSuccess]   = useState('');
+
   // ── Guest / Auth state ──────────────────────────────────────────────────────
   type AuthMode = 'guest' | 'login' | 'register';
   const [authMode, setAuthMode]           = useState<AuthMode>('guest');
@@ -125,7 +132,8 @@ export default function Checkout() {
   }, [cart.length, navigate, orderPlaced]);
 
   const shippingCost  = cartTotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_FEE;
-  const orderTotal    = cartTotal + shippingCost;
+  const discount      = appliedCoupon ? appliedCoupon.kesValue : 0;
+  const orderTotal    = Math.max(0, cartTotal + shippingCost - discount);
   const totalItems    = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // The email that will receive the confirmation
@@ -134,6 +142,39 @@ export default function Checkout() {
   const handleAddressChange = (field: keyof ShippingAddress, value: string) => {
     setShippingAddress(prev => ({ ...prev, [field]: value }));
     setError('');
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setCouponLoading(true);
+    setCouponError('');
+    setCouponSuccess('');
+    try {
+      const currentToken = token || localStorage.getItem('token') || sessionStorage.getItem('token');
+      const res = await fetch(`${API_URL}/api/rewards/coupon/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${currentToken}` },
+        body: JSON.stringify({ couponCode: couponInput.trim() }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAppliedCoupon({ code: data.couponCode, kesValue: data.kesValue });
+        setCouponSuccess(`Coupon applied! KES ${data.kesValue.toLocaleString()} discount`);
+        setCouponInput('');
+      } else {
+        setCouponError(data.message || 'Invalid coupon');
+      }
+    } catch {
+      setCouponError('Failed to validate coupon');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponSuccess('');
+    setCouponError('');
   };
 
   const handleQtyChange = (productId: string, delta: number, currentQty: number) => {
@@ -248,6 +289,8 @@ export default function Checkout() {
           isGuestOrder: true,
           guestEmail: guestEmail.trim().toLowerCase(),
         }),
+        // Coupon discount
+        ...(appliedCoupon && { couponCode: appliedCoupon.code }),
         ...(paymentMethod === 'mpesa' && {
           mpesaPhone: mpesaPhone.replace(/^0|^254/, '254'),
         }),
@@ -805,6 +848,45 @@ export default function Checkout() {
 
                 <Separator className="my-4" />
 
+                {/* ── Coupon / Rewards Discount ── only for logged-in users ── */}
+                {user && (
+                  <div className="mb-4">
+                    {!appliedCoupon ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="couponCode" className="text-sm font-medium">Rewards Coupon</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            id="couponCode"
+                            placeholder="e.g. MZURI-500-ABC1"
+                            value={couponInput}
+                            onChange={e => { setCouponInput(e.target.value); setCouponError(''); }}
+                            onKeyDown={e => e.key === 'Enter' && handleApplyCoupon()}
+                            className="h-9 text-sm"
+                          />
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handleApplyCoupon}
+                            disabled={couponLoading || !couponInput.trim()}
+                            className="flex-shrink-0"
+                          >
+                            {couponLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Apply'}
+                          </Button>
+                        </div>
+                        {couponError && <p className="text-xs text-red-500">{couponError}</p>}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between px-3 py-2 bg-green-50 border border-green-200 rounded-lg">
+                        <div>
+                          <p className="text-xs font-medium text-green-800">{couponSuccess}</p>
+                          <p className="text-xs text-green-600">{appliedCoupon.code}</p>
+                        </div>
+                        <button onClick={handleRemoveCoupon} className="text-xs text-red-500 hover:underline ml-2">Remove</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Subtotal</span>
@@ -816,6 +898,12 @@ export default function Checkout() {
                       {shippingCost === 0 ? 'Free' : `KES ${shippingCost.toLocaleString()}`}
                     </span>
                   </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-green-600 font-medium">
+                      <span>Discount</span>
+                      <span>- KES {discount.toLocaleString()}</span>
+                    </div>
+                  )}
                 </div>
 
                 <Separator className="my-4" />
